@@ -1,0 +1,207 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Color System ──────────────────────────────────────────── */
+  --color-ink: #1a1a2e;
+  --color-graphite: #16213e;
+  --color-charcoal: #2d2d3f;
+  --color-slate: #64748b;
+  --color-silver: #94a3b8;
+  --color-paper: #f8f7f4;
+  --color-surface: #fefdfb;
+  --color-copper: #c4854c;
+  --color-copper-muted: #d4a574;
+  --color-copper-light: #f0e0cc;
+  --color-success: #4a7c59;
+  --color-warning: #b8860b;
+
+  /* ── Typography ────────────────────────────────────────────── */
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* ── Elevation Shadows (paper-tinted, no pure black) ──────── */
+  --shadow-resting: 0 1px 3px rgba(26, 26, 46, 0.04), 0 1px 2px rgba(26, 26, 46, 0.03);
+  --shadow-raised: 0 4px 12px rgba(26, 26, 46, 0.06), 0 2px 4px rgba(26, 26, 46, 0.04);
+  --shadow-floating: 0 12px 40px rgba(26, 26, 46, 0.1), 0 4px 12px rgba(26, 26, 46, 0.06);
+}
+
+/* ── Base ────────────────────────────────────────────────────── */
+html {
+  overflow-x: clip;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+/* ── Reduced Motion (global baseline) ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Focus ───────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Selection ───────────────────────────────────────────────── */
+::selection {
+  background-color: var(--color-copper-light);
+  color: var(--color-ink);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-silver);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate);
+}
+
+/* ── 12-Column Page Grid ─────────────────────────────────────── */
+.grid-page {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(1rem, 1fr)
+    [content-start] repeat(12, minmax(0, 1fr))
+    [content-end] minmax(1rem, 1fr)
+    [full-end];
+  column-gap: clamp(0.75rem, 1.5vw, 1.5rem);
+}
+
+@media (min-width: 640px) {
+  .grid-page {
+    grid-template-columns:
+      [full-start] minmax(1.5rem, 1fr)
+      [content-start] repeat(12, minmax(0, 1fr))
+      [content-end] minmax(1.5rem, 1fr)
+      [full-end];
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-page {
+    grid-template-columns:
+      [full-start] minmax(2rem, 1fr)
+      [content-start] repeat(12, minmax(0, 72px))
+      [content-end] minmax(2rem, 1fr)
+      [full-end];
+  }
+}
+
+.col-content {
+  grid-column: content-start / content-end;
+}
+
+.col-full {
+  grid-column: full-start / full-end;
+}
+
+/* Asymmetric column helpers */
+.col-left-7 {
+  grid-column: content-start / span 7;
+}
+.col-right-5 {
+  grid-column: span 5 / content-end;
+}
+.col-left-8 {
+  grid-column: content-start / span 8;
+}
+.col-right-4 {
+  grid-column: span 4 / content-end;
+}
+.col-left-5 {
+  grid-column: content-start / span 5;
+}
+.col-right-7 {
+  grid-column: span 7 / content-end;
+}
+
+@media (max-width: 767px) {
+  .col-left-7,
+  .col-right-5,
+  .col-left-8,
+  .col-right-4,
+  .col-left-5,
+  .col-right-7 {
+    grid-column: content-start / content-end;
+  }
+}
+
+/* ── Typography Utilities ────────────────────────────────────── */
+.text-hero {
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.text-display {
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+
+.text-data {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 4.5vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-data-sm {
+  font-family: var(--font-mono);
+  font-size: clamp(1.5rem, 2.5vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+}
+
+/* ── Verification Signal Animation ───────────────────────────── */
+@keyframes signalFlow {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-signal-flow {
+  animation: signalFlow 2.8s linear infinite;
+}
