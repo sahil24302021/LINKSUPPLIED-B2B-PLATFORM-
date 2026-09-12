@@ -13,6 +13,7 @@ import {
   ChartLine,
   Check,
   ArrowRight,
+  GlobeHemisphereWest,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -162,6 +163,9 @@ const NODES: VerificationNode[] = [
 export function VerificationSection() {
   const reduce = useReducedMotion();
   const wrapRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const pStage6Ref = useRef(0.75);
   const stRef = useRef<ScrollTrigger | null>(null);
   const [activeStage, setActiveStage] = useState(0);
   const activeStageRef = useRef(0);
@@ -171,11 +175,11 @@ export function VerificationSection() {
   const scrollToStage = useCallback((stageIdx: number) => {
     if (!stRef.current) return;
     const st = stRef.current;
-    settledStageRef.current = stageIdx;
-    activeStageRef.current = stageIdx;
-    setActiveStage(stageIdx);
-    // 6 duration units across 7 stages (0..6)
-    const targetProgress = Math.min(1.0, Math.max(0, stageIdx / 6));
+    const clamped = Math.max(0, Math.min(6, stageIdx));
+    settledStageRef.current = clamped;
+    activeStageRef.current = clamped;
+    setActiveStage(clamped);
+    const targetProgress = (clamped / 6) * pStage6Ref.current;
     const targetScroll = st.start + targetProgress * (st.end - st.start);
     window.scrollTo({
       top: targetScroll,
@@ -213,7 +217,7 @@ export function VerificationSection() {
 
     const createChoreography = (
       stageDistance: number,
-      holdDistance: number,
+      teaserDistance: number,
       scrubVal: number,
       snapMin: number,
       snapMax: number,
@@ -223,6 +227,8 @@ export function VerificationSection() {
       const stagePanels = gsap.utils.toArray<HTMLElement>(
         ".verification-stage-panel"
       );
+      const sheet = sheetRef.current;
+      const inner = innerRef.current;
 
       // Initial state: Stage 0 visible & settled; Stages 1..6 hidden below
       stagePanels.forEach((panel, i) => {
@@ -239,8 +245,25 @@ export function VerificationSection() {
         x: isMobile ? -24 : -44,
       });
 
-      const endDistance = stageDistance + holdDistance;
+      // Market Teaser Sheet starts translated to the RIGHT (+105%) and fully hidden at scroll 0
+      if (sheet && inner) {
+        gsap.set(sheet, {
+          xPercent: 105,
+          autoAlpha: 0,
+          willChange: "transform, opacity",
+        });
+
+        gsap.set(inner, {
+          xPercent: -105,
+          x: isMobile ? 20 : 40,
+          filter: isMobile ? "none" : "blur(6px)",
+          willChange: "transform, filter",
+        });
+      }
+
+      const endDistance = stageDistance + teaserDistance;
       const pStage6 = stageDistance / endDistance;
+      pStage6Ref.current = pStage6;
 
       const tl = gsap.timeline({
         defaults: { ease: "power2.inOut" },
@@ -250,9 +273,10 @@ export function VerificationSection() {
           end: () => `+=${window.innerHeight * endDistance}`,
           pin: true,
           scrub: scrubVal,
+          anticipatePin: 1,
           snap: {
             snapTo: (value: number) => {
-              // Beyond Stage 6: user is smoothly scrolling into MarketTeaserSection transition
+              // Beyond Stage 6: user is smoothly scrubbing through Market Teaser transition
               if (value >= pStage6 + 0.04) return value;
               if (value <= 0.03) return 0.0;
 
@@ -285,13 +309,24 @@ export function VerificationSection() {
             },
           },
           invalidateOnRefresh: true,
+          onLeaveBack: () => {
+            if (sheet && inner) {
+              gsap.set(sheet, { xPercent: 105, autoAlpha: 0 });
+              gsap.set(inner, {
+                xPercent: -105,
+                x: isMobile ? 20 : 40,
+                filter: isMobile ? "none" : "blur(6px)",
+              });
+            }
+            if (wrapRef.current) {
+              gsap.set(wrapRef.current, { backgroundColor: "" });
+            }
+            gsap.set(".verification-mobile-footer", { autoAlpha: 1 });
+          },
           onUpdate: (self) => {
             const p = self.progress;
             const normP = Math.min(1.0, p / pStage6);
             let stage = 0;
-            // Midpoints between snap points define authoritative activeStage:
-            // Snap points: 0, 0.1667, 0.3333, 0.5000, 0.6667, 0.8333, 1.0000
-            // Midpoints: 0.0833, 0.2500, 0.4167, 0.5833, 0.7500, 0.9167
             if (normP >= 0.9167) {
               stage = 6;
             } else if (normP >= 0.7500) {
@@ -356,7 +391,6 @@ export function VerificationSection() {
       }
 
       // ── Step 5 -> 6: Final Stage Transition ───────────────────────
-      // Stage 5 exits, Stage 6 (Interaction Verified) enters
       const step5Base = 5.0;
       tl.to(
         stagePanels[5],
@@ -384,7 +418,7 @@ export function VerificationSection() {
         step5Base + 0.38
       );
 
-      // Final Payoff: Enters from LEFT (x: -44 -> 0 or -24 -> 0) during Stage 6 completion
+      // Final Payoff: Enters from LEFT during Stage 6 completion
       tl.fromTo(
         ".verification-final-payoff",
         { autoAlpha: 0, x: isMobile ? -24 : -44 },
@@ -398,19 +432,68 @@ export function VerificationSection() {
         step5Base + 0.60
       );
 
-      // Hold Stage 6 + ALL LAYERS VERIFIED pinned throughout MarketTeaserSection transition
-      const totalTimelineUnits = 6.0 + holdDistance * (6.0 / stageDistance);
-      tl.set({}, {}, totalTimelineUnits);
+      // ── Step 6 -> Market Teaser Transition ────────────────────────
+      // Hold Stage 6 + ALL LAYERS VERIFIED settled (units 6.0 to 6.35)
+      const sweepStart = 6.35;
+      const sweepDuration = 1.1;
+      const sweepEnd = sweepStart + sweepDuration; // 7.45
+
+      if (sheet && inner) {
+        // Fade out mobile footer link cleanly before dark sheet sweeps over
+        tl.to(
+          ".verification-mobile-footer",
+          { autoAlpha: 0, duration: 0.25, ease: "power1.out" },
+          sweepStart
+        );
+
+        // Show sheet immediately as soon as sweep begins
+        tl.to(
+          sheet,
+          { autoAlpha: 1, duration: 0.04, ease: "none" },
+          sweepStart
+        );
+
+        // Dark sheet sweeps across from RIGHT to LEFT with depth shadow
+        tl.to(
+          sheet,
+          { xPercent: 0, ease: "power2.out", duration: sweepDuration },
+          sweepStart
+        );
+
+        // Inner content reveals and settles into position
+        tl.to(
+          inner,
+          {
+            xPercent: 0,
+            x: 0,
+            filter: "none",
+            ease: "power2.out",
+            duration: sweepDuration,
+          },
+          sweepStart
+        );
+
+        // Clear filter at end of sweep to guarantee 100% native sharpness
+        tl.set(inner, { clearProps: "filter" }, sweepEnd);
+
+        // Set container background to bg-ink to guarantee 100% solid dark background
+        if (wrapRef.current) {
+          tl.set(wrapRef.current, { backgroundColor: "#0B0F19" }, sweepEnd);
+        }
+
+        // Settled reading hold zone for Market Teaser before unpinning
+        tl.to({}, { duration: 0.55 });
+      }
     };
 
-    // Desktop: 6.0 stage distance + 1.4 hold distance across 6 stage transitions
+    // Desktop: 6.0 stage distance + 2.0 teaser distance
     mm.add("(min-width: 768px)", () => {
-      createChoreography(6.0, 1.4, 0.65, 0.28, 0.48, 0.08, false);
+      createChoreography(6.0, 2.0, 0.65, 0.28, 0.48, 0.08, false);
     });
 
-    // Mobile: 4.8 stage distance + 1.4 hold distance across 6 stage transitions
+    // Mobile: 4.8 stage distance + 1.6 teaser distance
     mm.add("(max-width: 767px)", () => {
-      createChoreography(4.8, 1.4, 0.55, 0.22, 0.38, 0.06, true);
+      createChoreography(4.8, 1.6, 0.55, 0.22, 0.38, 0.06, true);
     });
 
     return () => {
@@ -421,28 +504,57 @@ export function VerificationSection() {
   // ── Reduced Motion: Clean static ───────────────────────────────
   if (reduce) {
     return (
-      <section className="py-24 bg-surface border-t border-ink/[0.06]">
-        <div className="grid-page">
-          <div className="col-content">
-            <h2 className="text-display text-ink">
-              Every badge explains what evidence backs it.
-            </h2>
-            <div className="mt-12 space-y-8">
-              {NODES.map((node) => (
-                <div key={node.id} className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <Check size={14} weight="bold" />
+      <>
+        <section className="py-24 bg-surface border-t border-ink/[0.06]">
+          <div className="grid-page">
+            <div className="col-content">
+              <h2 className="text-display text-ink">
+                Every badge explains what evidence backs it.
+              </h2>
+              <div className="mt-12 space-y-8">
+                {NODES.map((node) => (
+                  <div key={node.id} className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <Check size={14} weight="bold" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-ink">{node.name}</h3>
+                      <p className="text-sm text-slate mt-1">{node.tagline}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-ink">{node.name}</h3>
-                    <p className="text-sm text-slate mt-1">{node.tagline}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+        <section className="relative bg-ink py-24 md:py-36 overflow-hidden">
+          <div className="grid-page">
+            <div className="col-content">
+              <div className="max-w-[54ch]">
+                <div className="w-11 h-11 rounded-xl bg-copper/15 border border-copper/20 flex items-center justify-center mb-5">
+                  <GlobeHemisphereWest
+                    size={22}
+                    weight="duotone"
+                    className="text-copper"
+                  />
+                </div>
+                <span className="text-mono-label text-copper block mb-3">
+                  MARKET INTELLIGENCE
+                </span>
+                <h2 className="text-display text-surface">
+                  &ldquo;Where should I sell this?&rdquo;
+                </h2>
+                <p className="mt-4 text-base md:text-lg text-silver leading-relaxed">
+                  LINKSUPPLIED identifies where active market demand exists for what
+                  your business makes or sells — matching production capacity and
+                  verified credentials directly to active buyer requirements across
+                  regions.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
     );
   }
 
@@ -450,7 +562,7 @@ export function VerificationSection() {
   const vi = activeStage >= 1 && activeStage <= 6 ? activeStage - 1 : -1;
 
   return (
-    <div className="relative w-full bg-surface overflow-hidden -mb-[240dvh]" data-verification-wrapper="true">
+    <div className="relative w-full bg-surface overflow-hidden" data-verification-wrapper="true">
       <section ref={wrapRef} className="relative w-full bg-surface overflow-hidden">
         <div
           style={{ height: "100dvh", position: "relative" }}
@@ -683,7 +795,7 @@ export function VerificationSection() {
         })}
 
         {/* Mobile footer link */}
-        <div className="lg:hidden absolute bottom-3 left-0 right-0 px-5 z-20">
+        <div className="verification-mobile-footer lg:hidden absolute bottom-3 left-0 right-0 px-5 z-20">
           <div className="flex items-center justify-between pt-3 border-t border-ink/[0.06]">
             <span className="text-[9px] font-mono text-slate/30 uppercase tracking-[0.15em]">
               TRUST FRAMEWORK
@@ -695,6 +807,49 @@ export function VerificationSection() {
               <span>Full model</span>
               <ArrowRight size={11} />
             </Link>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════
+            INCOMING MARKET TEASER DARK SHEET (Layer 2)
+            Sweeps across from RIGHT → LEFT with depth shadow,
+            seamlessly covering verification before smooth unpin
+            ════════════════════════════════════════════════════════ */}
+        <div
+          ref={sheetRef}
+          className="absolute inset-0 z-30 w-full h-full overflow-hidden bg-ink shadow-[-30px_0_70px_rgba(0,0,0,0.85)] border-l border-white/10 will-change-transform"
+          data-market-sheet="true"
+        >
+          <div
+            ref={innerRef}
+            className="w-full h-full flex flex-col justify-center pt-16 pb-8 will-change-transform"
+            data-market-inner="true"
+          >
+            <div className="grid-page w-full">
+              <div className="col-content">
+                <div className="max-w-[54ch]">
+                  <div className="w-11 h-11 rounded-xl bg-copper/15 border border-copper/20 flex items-center justify-center mb-4 md:mb-5">
+                    <GlobeHemisphereWest
+                      size={22}
+                      weight="duotone"
+                      className="text-copper"
+                    />
+                  </div>
+                  <span className="text-mono-label text-copper block mb-2.5 md:mb-3">
+                    MARKET INTELLIGENCE
+                  </span>
+                  <h2 className="text-display text-surface leading-tight">
+                    &ldquo;Where should I sell this?&rdquo;
+                  </h2>
+                  <p className="mt-3 md:mt-4 text-sm sm:text-base md:text-lg text-silver leading-relaxed">
+                    LINKSUPPLIED identifies where active market demand exists for
+                    what your business makes or sells — matching production
+                    capacity and verified credentials directly to active buyer
+                    requirements across regions.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

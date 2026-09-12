@@ -4,7 +4,6 @@ import { TwoSidedSection } from "@/components/sections/TwoSidedSection";
 import { MatchingSection } from "@/components/sections/MatchingSection";
 import { ProfilePreviewSection } from "@/components/sections/ProfilePreviewSection";
 import { VerificationSection } from "@/components/sections/VerificationSection";
-import { MarketTeaserSection } from "@/components/sections/MarketTeaserSection";
 import { WhyLinksuppliedSection } from "@/components/sections/WhyLinksuppliedSection";
 import { CTASection } from "@/components/sections/CTASection";
 
@@ -16,8 +15,7 @@ export default function Home() {
       {/* 04 */ } <TwoSidedSection />
       {/* 05 */ } <MatchingSection />
       {/* 06 */ } <ProfilePreviewSection />
-      {/* 07 */ } <VerificationSection />
-      {/* 08 */ } <MarketTeaserSection />
+      {/* 07 + 08 */ } <VerificationSection />
       {/* 09 */ } <WhyLinksuppliedSection />
       {/* 10 */ } <CTASection />
     </>
