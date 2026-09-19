@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import type { MatchFactor } from "@/lib/types";
+import type { MatchFactor } from "@/types";
+import { DURATION, EASE } from "@/lib/animation";
 
 interface FactorBarChartProps {
   factors: MatchFactor[];
@@ -141,9 +142,9 @@ export default function FactorBarChart({
                 transition={
                   shouldAnimate
                     ? {
-                        duration: 0.7,
+                        duration: DURATION.slow,
                         delay,
-                        ease: [0.16, 1, 0.3, 1],
+                        ease: EASE.out,
                       }
                     : { duration: 0 }
                 }

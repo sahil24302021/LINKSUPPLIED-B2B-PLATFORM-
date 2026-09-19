@@ -1,19 +1,19 @@
 "use client";
 
-import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { useReducedMotion } from "motion/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import FactorBarChart from "@/components/ui/FactorBarChart";
+import { SampleDataTag } from "@/components/ui/SampleDataTag";
 import {
   ClipboardText,
   Brain,
   ListNumbers,
+  ShieldCheck,
   Handshake,
+  CheckCircle,
 } from "@phosphor-icons/react";
-
-const useIsomorphicLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -25,63 +25,67 @@ interface PinnedPipelineProps {
 
 const stages = [
   {
-    key: "business",
-    title: "Business",
+    key: "need",
+    title: "Tell us what you need",
     step: "01",
     icon: ClipboardText,
-    description: "You describe what your business needs or what it makes.",
+    description:
+      "Product, material, process, batch quantity, precision tolerance, and target delivery requirements.",
     detail:
-      "Start with a natural language requirement or structured form — product type, quantity, certifications, target market. LINKSUPPLIED captures the specifics that determine a real match.",
+      "Enter your engineering criteria directly — material grade (e.g. EN8 / 316L), process (CNC turning, forging), required batch volume, critical precision tolerances (e.g. ±0.02 mm), and target delivery location.",
   },
   {
-    key: "intelligence",
-    title: "Intelligence",
+    key: "structure",
+    title: "We structure the requirement",
     step: "02",
     icon: Brain,
     description:
-      "LINKSUPPLIED understands the requirement and evaluates relevant signals.",
+      "Raw engineering inputs become a structured, deterministic sourcing brief.",
     detail:
-      "Your input is decomposed into evaluation factors: product fit, capacity alignment, certification requirements, market experience, and geographic relevance. Each factor is weighted based on your specific context.",
+      "LINKSUPPLIED structures raw specifications into standardized material definitions, machine envelope bounds, and auditable feasibility criteria — eliminating supplier guesswork and ambiguity.",
   },
   {
-    key: "match",
-    title: "Match",
+    key: "suppliers",
+    title: "Review relevant suppliers",
     step: "03",
     icon: ListNumbers,
     description:
-      "Relevant businesses are ranked by fit.",
+      "Inspect matched manufacturers with transparent capabilities, tolerances, and capacity.",
     detail:
-      "Every business in the system is evaluated against your factor profile. The result is a ranked shortlist where each score is explainable — you can see exactly which factors drove the match and by how much.",
+      "Evaluate categorized manufacturers vs distributors with factual alignment across raw material, machine tolerances, monthly capacity, and verified operational status.",
   },
   {
-    key: "connection",
-    title: "Connection",
+    key: "evidence",
+    title: "Inspect the evidence",
     step: "04",
+    icon: ShieldCheck,
+    description:
+      "Examine primary audit documents, factory property records, and equipment calibration logs.",
+    detail:
+      "Review auditable documentation before outreach: factory title deeds, machine maintenance logs, CMM calibration records, and ISO/IATF compliance certificates.",
+  },
+  {
+    key: "rfq",
+    title: "Request quotations",
+    step: "05",
     icon: Handshake,
     description:
-      "You connect with verified businesses that actually fit.",
+      "Dispatch formal RFQs and receive transparent commercial bids with pricing, lead times, and terms.",
     detail:
-      "Each matched business has a verified intelligence profile — not a catalog page. You see capacity, certifications, trade history, and verification evidence before you make contact.",
+      "Collect binding bids directly from verified plants — unit prices, tooling NRE, production lead times, MOQ, and payment terms — with zero intermediary commissions.",
   },
-];
-
-const intelligenceFactors = [
-  { label: "Product fit", value: 95 },
-  { label: "Capacity", value: 88 },
-  { label: "Certifications", value: 92 },
-  { label: "Market experience", value: 85 },
-  { label: "Location", value: 78 },
 ];
 
 export default function PinnedPipeline({
   detailed = false,
 }: PinnedPipelineProps) {
   const reduce = useReducedMotion();
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const desktopWrapRef = useRef<HTMLDivElement>(null);
+  const mobileWrapRef = useRef<HTMLDivElement>(null);
   const stRef = useRef<ScrollTrigger | null>(null);
   const [activeStage, setActiveStage] = useState(0);
 
-  // Smooth click navigation to any stage checkpoint
+  // Smooth click navigation to any stage checkpoint (desktop only)
   const scrollToStage = useCallback((stageIdx: number) => {
     if (!stRef.current) return;
     const st = stRef.current;
@@ -93,14 +97,20 @@ export default function PinnedPipeline({
     });
   }, []);
 
+  // ── GSAP matchMedia: Desktop Pinned vs Mobile Unpinned Flow ──
   useIsomorphicLayoutEffect(() => {
-    if (reduce || !wrapRef.current) return;
+    if (reduce) return;
 
-    const ctx = gsap.context(() => {
-      const textPanels = gsap.utils.toArray<HTMLElement>(".pipeline-text-panel");
-      const visualPanels = gsap.utils.toArray<HTMLElement>(".pipeline-visual-panel");
+    const mm = gsap.matchMedia();
 
-      // Initial state: Stage 0 settled & visible; Stages 1..3 hidden below
+    // ── DESKTOP: Pinned timeline (min-width: 768px, untouched) ──
+    mm.add("(min-width: 768px)", () => {
+      const wrap = desktopWrapRef.current;
+      if (!wrap) return;
+
+      const textPanels = gsap.utils.toArray<HTMLElement>(".pipeline-text-panel", wrap);
+      const visualPanels = gsap.utils.toArray<HTMLElement>(".pipeline-visual-panel", wrap);
+
       textPanels.forEach((panel, i) => {
         if (i === 0) {
           gsap.set(panel, { autoAlpha: 1, y: 0, scale: 1 });
@@ -117,18 +127,16 @@ export default function PinnedPipeline({
         }
       });
 
-      // Master Timeline: exactly 3.0 duration units across 4 stages
-      // Snap points: 0.00 (Stage 0), 0.3333 (Stage 1), 0.6667 (Stage 2), 1.0000 (Stage 3)
       const tl = gsap.timeline({
         defaults: { ease: "power2.inOut" },
         scrollTrigger: {
-          trigger: wrapRef.current,
+          trigger: wrap,
           start: "top top",
-          end: () => `+=${window.innerHeight * 3.6}`,
+          end: () => `+=${window.innerHeight * 4.2}`,
           pin: true,
           scrub: 0.65,
           snap: {
-            snapTo: [0, 1 / 3, 2 / 3, 1],
+            snapTo: [0, 0.25, 0.5, 0.75, 1.0],
             duration: { min: 0.25, max: 0.55 },
             delay: 0.08,
             ease: "power2.out",
@@ -137,11 +145,13 @@ export default function PinnedPipeline({
           onUpdate: (self) => {
             const p = self.progress;
             let stage = 0;
-            if (p >= 0.833) {
+            if (p >= 0.875) {
+              stage = 4;
+            } else if (p >= 0.625) {
               stage = 3;
-            } else if (p >= 0.500) {
+            } else if (p >= 0.375) {
               stage = 2;
-            } else if (p >= 0.167) {
+            } else if (p >= 0.125) {
               stage = 1;
             } else {
               stage = 0;
@@ -153,19 +163,13 @@ export default function PinnedPipeline({
 
       stRef.current = tl.scrollTrigger as ScrollTrigger;
 
-      // Choreographed transitions between each consecutive pair
-      // Step 0 -> 1: interval [0.0, 1.0]
-      // Step 1 -> 2: interval [1.0, 2.0]
-      // Step 2 -> 3: interval [2.0, 3.0]
       for (let i = 0; i < stages.length - 1; i++) {
         const stepBase = i * 1.0;
-        const exitStart = stepBase + 0.36; // Hold current stage until 0.36
-        const exitDuration = 0.30;         // Exits from 0.36 to 0.66
-        const enterStart = stepBase + 0.60;// Starts entering at 0.60 (outgoing almost gone)
-        const enterDuration = 0.30;        // Reaches full settle at 0.90
-        // Settle & hold from 0.90 through 1.0 (snap point) to 1.36
+        const exitStart = stepBase + 0.36;
+        const exitDuration = 0.30;
+        const enterStart = stepBase + 0.60;
+        const enterDuration = 0.30;
 
-        // Outgoing stage exits cleanly
         tl.to(
           textPanels[i],
           {
@@ -191,7 +195,6 @@ export default function PinnedPipeline({
           exitStart
         );
 
-        // Incoming stage enters smoothly and settles
         tl.fromTo(
           textPanels[i + 1],
           { autoAlpha: 0, y: 24, scale: 0.98 },
@@ -220,11 +223,95 @@ export default function PinnedPipeline({
         );
       }
 
-      // Lock timeline duration to exactly 3.0 units
-      tl.set({}, {}, 3.0);
-    }, wrapRef);
+      tl.set({}, {}, 4.0);
+    });
 
-    return () => ctx.revert();
+    // ── MOBILE: Sequential 1-by-1 Pinned Scrub (max-width: 767px) ──
+    mm.add("(max-width: 767px)", () => {
+      const wrap = mobileWrapRef.current;
+      if (!wrap) return;
+
+      const panels = gsap.utils.toArray<HTMLElement>(".mobile-stage-panel", wrap);
+
+      panels.forEach((panel, i) => {
+        if (i === 0) {
+          gsap.set(panel, { autoAlpha: 1, y: 0, scale: 1 });
+        } else {
+          gsap.set(panel, { autoAlpha: 0, y: 20, scale: 0.98 });
+        }
+      });
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.inOut" },
+        scrollTrigger: {
+          trigger: wrap,
+          start: "top top",
+          end: () => `+=${window.innerHeight * 3.6}`,
+          pin: true,
+          scrub: 0.65,
+          snap: {
+            snapTo: [0, 0.25, 0.5, 0.75, 1.0],
+            duration: { min: 0.25, max: 0.55 },
+            delay: 0.08,
+            ease: "power2.out",
+          },
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const p = self.progress;
+            let stage = 0;
+            if (p >= 0.875) {
+              stage = 4;
+            } else if (p >= 0.625) {
+              stage = 3;
+            } else if (p >= 0.375) {
+              stage = 2;
+            } else if (p >= 0.125) {
+              stage = 1;
+            } else {
+              stage = 0;
+            }
+            setActiveStage((prev) => (prev !== stage ? stage : prev));
+          },
+        },
+      });
+
+      for (let i = 0; i < stages.length - 1; i++) {
+        const stepBase = i * 1.0;
+        const exitStart = stepBase + 0.36;
+        const exitDuration = 0.30;
+        const enterStart = stepBase + 0.60;
+        const enterDuration = 0.30;
+
+        tl.to(
+          panels[i],
+          {
+            autoAlpha: 0,
+            y: -18,
+            scale: 0.98,
+            duration: exitDuration,
+            ease: "power2.in",
+          },
+          exitStart
+        );
+
+        tl.fromTo(
+          panels[i + 1],
+          { autoAlpha: 0, y: 20, scale: 0.98 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            duration: enterDuration,
+            ease: "power2.out",
+          },
+          enterStart
+        );
+      }
+
+      tl.set({}, {}, 4.0);
+    });
+
+    return () => mm.revert();
   }, [reduce]);
 
   // Reduced motion accessible fallback
@@ -265,15 +352,95 @@ export default function PinnedPipeline({
   }
 
   return (
-    <div
-      ref={wrapRef}
-      className="relative w-full h-[100dvh] overflow-hidden bg-paper"
-    >
-      {/* ====================================================
-          FIXED/PINNED 4-STEP HORIZONTAL NAVIGATION
-          Positioned safely below the 64px navbar, centered, always visible
-          [ Business ] — [ Intelligence ] — [ Match ] — [ Connection ]
-          ==================================================== */}
+    <>
+      {/* ── MOBILE RENDER (block md:hidden) — Sequential 1-by-1 Pinned Scrub ── */}
+      <div
+        ref={mobileWrapRef}
+        className="block md:hidden relative w-full h-[100dvh] overflow-hidden bg-paper select-none"
+      >
+        {/* Compact sticky stage indicator for mobile */}
+        <div className="absolute top-[56px] left-0 right-0 z-30 flex items-center justify-center w-full px-3 py-2 bg-paper/95 backdrop-blur-sm border-b border-ink/[0.04]">
+          <div className="flex items-center gap-1">
+            {stages.map((stage, i) => {
+              const isActive = i === activeStage;
+              const isPast = i < activeStage;
+              return (
+                <div key={stage.key} className="flex items-center gap-1">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold font-mono transition-all duration-300 ${
+                      isActive
+                        ? "bg-copper text-surface shadow-sm scale-110"
+                        : isPast
+                        ? "bg-copper/20 text-copper"
+                        : "bg-ink/[0.06] text-slate/50"
+                    }`}
+                  >
+                    {stage.step}
+                  </div>
+                  {i < stages.length - 1 && (
+                    <div
+                      className={`w-4 h-px transition-colors duration-300 ${
+                        isPast ? "bg-copper/40" : "bg-ink/[0.08]"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Sequential 1-by-1 cards: exactly one card in the viewport at a time */}
+        <div className="absolute inset-0 flex items-center pt-24 pb-4 px-3 overflow-hidden">
+          <div className="relative w-full grid [grid-template-areas:'mobile-stage'] items-center justify-items-center">
+            {stages.map((stage, i) => {
+              const Icon = stage.icon;
+              const isActive = i === activeStage;
+              return (
+                <div
+                  key={stage.key}
+                  className="mobile-stage-panel [grid-area:mobile-stage] w-full max-w-[350px] mx-auto rounded-2xl bg-surface border border-ink/[0.08] p-4 shadow-sm"
+                  style={{
+                    pointerEvents: isActive ? "auto" : "none",
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-copper/8 border border-copper/15 flex items-center justify-center shrink-0">
+                      <Icon
+                        size={16}
+                        weight="duotone"
+                        className="text-copper"
+                      />
+                    </div>
+                    <span className="font-mono text-[11px] font-semibold text-copper tracking-wider uppercase">
+                      STEP {stage.step}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-ink leading-tight tracking-tight mb-1">
+                    {stage.title}
+                  </h3>
+
+                  <p className="text-xs text-slate leading-snug mb-3">
+                    {stage.description}
+                  </p>
+
+                  <div className="w-full flex justify-center">
+                    <StageVisual stageIndex={i} compact={true} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP RENDER (hidden md:block) — Pinned timeline unchanged ── */}
+      <div
+        ref={desktopWrapRef}
+        className="hidden md:block relative w-full h-[100dvh] overflow-hidden bg-paper"
+      >
+      {/* FIXED/PINNED 5-STEP HORIZONTAL NAVIGATION */}
       <div className="absolute top-[80px] md:top-[88px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center w-full px-2 sm:px-3 max-w-full pointer-events-auto">
         <div className="flex items-center gap-0.5 sm:gap-2 bg-paper/95 backdrop-blur-sm py-1 px-1.5 sm:px-2 rounded-full border border-ink/[0.04] shadow-xs max-w-[calc(100vw-16px)] overflow-x-auto [scrollbar-width:none]">
           {stages.map((stage, i) => {
@@ -310,16 +477,11 @@ export default function PinnedPipeline({
         </div>
       </div>
 
-      {/* ====================================================
-          CONTROLLED STAGE AREA: ONE STAGE, ONE VIEWPORT
-          Offset cleanly below the navigation (pt-32 md:pt-36)
-          ==================================================== */}
+      {/* CONTROLLED STAGE AREA: ONE STAGE, ONE VIEWPORT */}
       <div className="absolute inset-0 flex items-center pt-32 md:pt-36 pb-6">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* ------------------------------------------------
-                LEFT: Text Stage Area (Stacked via CSS Grid)
-                ------------------------------------------------ */}
+            {/* LEFT: Text Stage Area (Stacked via CSS Grid) */}
             <div className="relative w-full grid [grid-template-areas:'stage-text'] items-center min-h-[140px] md:min-h-[220px]">
               {stages.map((stage, i) => {
                 const Icon = stage.icon;
@@ -357,9 +519,7 @@ export default function PinnedPipeline({
               })}
             </div>
 
-            {/* ------------------------------------------------
-                RIGHT: Visual Stage Area (Stacked via CSS Grid)
-                ------------------------------------------------ */}
+            {/* RIGHT: Visual Stage Area (Stacked via CSS Grid) */}
             <div className="relative w-full grid [grid-template-areas:'stage-visual'] items-center justify-items-center min-h-[260px] md:min-h-[340px]">
               {stages.map((stage, i) => {
                 const isActive = i === activeStage;
@@ -380,45 +540,45 @@ export default function PinnedPipeline({
         </div>
       </div>
     </div>
+    </>
   );
 }
 
-/* ── Stage-specific visual panels ──────────────────────── */
+/* ── Stage-specific miniature product UI preview panels ─────── */
 
 function StageVisual({
   stageIndex,
-  compact = false,
+  compact: _compact = false,
 }: {
   stageIndex: number;
   compact?: boolean;
 }) {
-  // STAGE 01: Business Requirement Panel
+  // STAGE 01: Tell us what you need (Miniature Procurement Intake Form)
   if (stageIndex === 0) {
     return (
       <div
-        className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 md:p-6 space-y-2.5 sm:space-y-3.5 border border-ink/[0.06]"
-        style={{ boxShadow: "var(--shadow-raised)" }}
+        className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 border border-ink/[0.08] space-y-2.5 shadow-sm"
       >
-        <div className="flex items-center justify-between pb-1.5 border-b border-ink/[0.04]">
-          <span className="text-mono-label text-copper text-[10px] font-semibold tracking-wider">
-            YOUR REQUIREMENT
+        <div className="flex items-center justify-between pb-1.5 border-b border-ink/[0.06]">
+          <span className="text-mono-label text-copper text-[10px] font-bold tracking-wider">
+            BUYER INTAKE · REQUIREMENTS
           </span>
-          <span className="text-[10px] font-mono text-slate/40 uppercase">
-            VERIFIED INPUT
-          </span>
+          <SampleDataTag />
         </div>
 
         {[
-          { label: "Product Category", value: "Glass cosmetic containers" },
-          { label: "Production Volume", value: "50,000 units / month" },
-          { label: "Certifications Required", value: "ISO 9001 · GMP Certified" },
-          { label: "Target Destination", value: "European Union (EU export)" },
+          { label: "Part Specification", value: "Round Bright Bar (Turned & Ground)" },
+          { label: "Material Grade", value: "EN8 Carbon Steel (Normalized)" },
+          { label: "Manufacturing Process", value: "CNC Turning & Centerless Grinding" },
+          { label: "Batch Quantity", value: "2,000 kg / month (MOQ: 500 kg)" },
+          { label: "Critical Tolerance", value: "±0.02 mm (Shaft OD)" },
+          { label: "Delivery Destination", value: "Mumbai, India (Ex-Works / CIF)" },
         ].map((field) => (
           <div key={field.label}>
-            <span className="text-[10px] text-slate/60 block mb-0.5 font-mono uppercase tracking-wider">
+            <span className="text-[9px] text-slate/60 block mb-0.5 font-mono uppercase tracking-wider">
               {field.label}
             </span>
-            <div className="px-3 py-1.5 sm:py-2 bg-paper rounded-lg border border-ink/[0.04] text-xs sm:text-sm text-ink font-medium">
+            <div className="px-2.5 py-1.5 bg-paper rounded-lg border border-ink/[0.04] text-xs text-ink font-medium truncate">
               {field.value}
             </div>
           </div>
@@ -427,169 +587,221 @@ function StageVisual({
     );
   }
 
-  // STAGE 02: Intelligence Evaluation Factors
+  // STAGE 02: We structure the requirement (Miniature Structured Sourcing Brief)
   if (stageIndex === 1) {
     return (
       <div
-        className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 md:p-6 border border-ink/[0.06]"
-        style={{ boxShadow: "var(--shadow-raised)" }}
+        className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 border border-ink/[0.08] space-y-3 shadow-sm"
       >
-        <div className="flex items-center justify-between mb-3 sm:mb-4 pb-1.5 border-b border-ink/[0.04]">
-          <span className="text-mono-label text-copper text-[10px] font-semibold tracking-wider">
-            EVALUATION FACTORS
-          </span>
-          <span className="text-[10px] font-mono text-slate/40 uppercase">
-            5 SIGNAL WEIGHTS
-          </span>
+        <div className="flex items-center justify-between pb-1.5 border-b border-ink/[0.06]">
+          <div className="flex items-center gap-1.5">
+            <span className="text-mono-label text-copper text-[10px] font-bold tracking-wider">
+              STRUCTURED SOURCING BRIEF
+            </span>
+            <span className="font-mono text-[10px] font-bold text-ink bg-paper px-1.5 py-0.5 rounded border border-ink/[0.08]">
+              REQ-2026-0841
+            </span>
+          </div>
+          <SampleDataTag />
         </div>
 
-        <FactorBarChart
-          factors={intelligenceFactors}
-          animate={true}
-          staggerMs={90}
-          compact={compact}
-        />
+        <div className="p-2.5 rounded-xl bg-paper border border-ink/[0.05] space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono text-slate/70 uppercase">Evaluation Model</span>
+            <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">Deterministic</span>
+          </div>
+          <p className="font-bold text-ink text-xs">Round Bright Bar (EN8 Grade)</p>
+          <p className="text-[11px] text-slate">Standard: DIN EN 10083-2 · Hardness 201–255 HB</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <span className="text-[9px] font-mono uppercase text-slate/60 block">Normalized Feasibility Checks</span>
+          {[
+            { label: "Material Feasibility", status: "Confirmed (Standard Commercial Stock)" },
+            { label: "Tolerance Feasibility", status: "Within Standard Grinding Capability" },
+            { label: "Envelope Check", status: "Ø 45 mm x 300 mm within standard lathe bed" },
+            { label: "Compliance Filter", status: "ISO 9001:2015 Mandatory Requirement" },
+          ].map((check) => (
+            <div key={check.label} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-ink/[0.02] border border-ink/[0.03]">
+              <span className="text-slate">{check.label}</span>
+              <span className="text-emerald-700 font-medium font-mono text-[10px] flex items-center gap-1">
+                <CheckCircle size={11} weight="fill" />
+                Pass
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  // STAGE 03: Match Ranked Shortlist
+  // STAGE 03: Review relevant suppliers (Miniature Relevant Suppliers Card Preview)
   if (stageIndex === 2) {
     return (
-      <div className="w-full max-w-[340px] sm:max-w-sm space-y-2 sm:space-y-3">
+      <div className="w-full max-w-[340px] sm:max-w-sm space-y-2.5">
         <div className="flex items-center justify-between px-1 pb-1">
-          <span className="text-mono-label text-copper text-[10px] font-semibold tracking-wider">
-            RANKED SHORTLIST
+          <span className="text-mono-label text-copper text-[10px] font-bold tracking-wider">
+            RELEVANT SUPPLIERS (3 MATCHED)
           </span>
-          <span className="text-[10px] font-mono text-slate/40 uppercase">
-            EXPLAINABLE FIT
+          <SampleDataTag />
+        </div>
+
+        {/* Primary Supplier Match */}
+        <div className="bg-surface rounded-xl p-3.5 border border-copper/40 ring-1 ring-copper/15 shadow-sm space-y-2">
+          <div className="flex items-start justify-between">
+            <div>
+              <span className="text-[9px] font-mono uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                VERIFIED MANUFACTURER
+              </span>
+              <h4 className="text-sm font-bold text-ink mt-1">PrecisionCast Works</h4>
+              <span className="text-[10px] text-slate">Pune, Maharashtra · 15 MT/mo capacity</span>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-copper bg-copper/10 px-2 py-0.5 rounded">
+              High Fit
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-ink/[0.05]">
+            {["Material ✓", "Process ✓", "Tolerance ✓", "Capacity ✓", "Quality ✓"].map((sig) => (
+              <span key={sig} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-paper border border-ink/[0.06] text-ink font-medium">
+                {sig}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Secondary Supplier Match */}
+        <div className="bg-surface rounded-xl p-3 border border-ink/[0.08] shadow-2xs opacity-85">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[9px] font-mono uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800">
+                MANUFACTURER
+              </span>
+              <h5 className="text-xs font-bold text-ink mt-0.5">Apex Precision Tooling</h5>
+              <span className="text-[10px] text-slate">Nashik · 10 MT/mo capacity</span>
+            </div>
+            <span className="text-[10px] font-mono text-slate bg-paper px-2 py-0.5 rounded border border-ink/[0.06]">
+              3 of 5 Factors
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STAGE 04: Inspect the evidence (Miniature Audit Evidence Stack)
+  if (stageIndex === 3) {
+    return (
+      <div className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 border border-ink/[0.08] space-y-2.5 shadow-sm">
+        <div className="flex items-center justify-between pb-1.5 border-b border-ink/[0.06]">
+          <span className="text-mono-label text-copper text-[10px] font-bold tracking-wider">
+            AUDITED EVIDENCE STACK
+          </span>
+          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
+            4 / 6 CONFIRMED
           </span>
         </div>
 
         {[
           {
-            name: "ABC Packaging Industries",
-            score: 95,
-            type: "Manufacturer · ISO 9001",
-            tag: "Top Match",
-            primary: true,
+            layer: "01 Entity",
+            title: "Ministry of Corporate Affairs Registration",
+            evidence: "Document Verified · Certificate of Incorporation",
           },
           {
-            name: "Prism Glassworks Ltd",
-            score: 88,
-            type: "Manufacturer · GMP Certified",
-            tag: "Verified",
-            primary: false,
+            layer: "02 Facility",
+            title: "Industrial Facility Lease Deed & Property Records",
+            evidence: "Physically Verified · On-Site Audit",
           },
           {
-            name: "Orient Cosmetics Container",
-            score: 72,
-            type: "Tier-1 Regional Supplier",
-            tag: "Regional",
-            primary: false,
+            layer: "03 Machinery",
+            title: "Mazak 5-Axis Turning & Grinding Serial Logs",
+            evidence: "Physically Audited · Machine Nameplate Verified",
           },
-        ].map((match) => (
+          {
+            layer: "04 Quality",
+            title: "ISO 9001:2015 Quality Management System",
+            evidence: "Registry Validated · Active Certificate",
+          },
+        ].map((item) => (
           <div
-            key={match.name}
-            className={`flex items-center justify-between bg-surface rounded-xl p-3 sm:p-3.5 border transition-all ${
-              match.primary
-                ? "border-copper/40 ring-1 ring-copper/15"
-                : "border-ink/[0.05]"
-            }`}
-            style={{ boxShadow: "var(--shadow-resting)" }}
+            key={item.layer}
+            className="p-2.5 rounded-xl bg-paper border border-ink/[0.05] flex items-start gap-2.5 text-xs"
           >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-mono text-sm sm:text-base font-bold tabular-nums ${
-                  match.score >= 90
-                    ? "bg-copper/10 text-copper border border-copper/20"
-                    : "bg-ink/[0.04] text-ink"
-                }`}
-              >
-                {match.score}
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-semibold text-ink leading-snug">
-                  {match.name}
-                </p>
-                <p className="text-[10px] sm:text-[11px] text-slate/60">
-                  {match.type}
-                </p>
-              </div>
+            <div className="w-5 h-5 rounded-md bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle size={13} weight="fill" />
             </div>
-            <span
-              className={`text-[9px] sm:text-[10px] font-mono uppercase px-2 py-0.5 rounded-full ${
-                match.primary
-                  ? "bg-copper/10 text-copper font-medium border border-copper/20"
-                  : "bg-ink/[0.04] text-slate/50"
-              }`}
-            >
-              {match.tag}
-            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono uppercase text-copper font-bold">{item.layer}</span>
+                <span className="text-[9px] font-mono text-slate/50">Audited</span>
+              </div>
+              <p className="font-semibold text-ink text-[11px] leading-snug mt-0.5 truncate">{item.title}</p>
+              <p className="text-[10px] text-slate/70 font-mono mt-0.5">{item.evidence}</p>
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  // STAGE 04: Direct Connection Panel
+  // STAGE 05: Request quotations (Miniature Commercial Quotation Matrix)
   return (
-    <div className="w-full max-w-[340px] sm:max-w-sm flex flex-col items-center gap-1.5 sm:gap-2">
-      <div className="flex items-center justify-between w-full px-1 pb-1">
-        <span className="text-mono-label text-copper text-[10px] font-semibold tracking-wider">
-          DIRECT CONNECTION
-        </span>
-        <span className="text-[10px] font-mono text-success flex items-center gap-1 font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-          VERIFIED MATCH
+    <div className="w-full max-w-[340px] sm:max-w-sm bg-surface rounded-2xl p-4 sm:p-5 border border-copper/30 ring-1 ring-copper/15 shadow-md space-y-3">
+      <div className="flex items-center justify-between pb-1.5 border-b border-ink/[0.06]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-mono-label text-copper text-[10px] font-bold tracking-wider">
+            RECEIVED QUOTATION
+          </span>
+          <span className="font-mono text-[10px] font-bold text-ink bg-paper px-1.5 py-0.5 rounded border border-ink/[0.08]">
+            QTE-2026-0194
+          </span>
+        </div>
+        <SampleDataTag />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="text-sm font-bold text-ink">PrecisionCast Works</h4>
+          <span className="text-[10px] text-slate">RFQ-2026-0841 · Round Bright Bar</span>
+        </div>
+        <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+          Active Commercial Bid
         </span>
       </div>
 
-      {[
-        {
-          label: "YOUR BUSINESS",
-          role: "REQUESTOR",
-          name: "European Cosmetics Co.",
-          meta: "Glass Packaging Requirement · 50k units/mo",
-        },
-        {
-          label: "MATCHED & VERIFIED PARTNER",
-          role: "SUPPLIER · 95% FIT",
-          name: "ABC Packaging Industries",
-          meta: "Direct Introductions Enabled · Verified Profile",
-        },
-      ].map((card, i) => (
-        <div key={card.label} className="w-full">
-          <div
-            className="bg-surface rounded-xl p-3 sm:p-4 w-full border border-ink/[0.06]"
-            style={{ boxShadow: "var(--shadow-resting)" }}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-mono-label text-copper text-[9px] sm:text-[10px] font-semibold">
-                {card.label}
-              </span>
-              <span className="text-[9px] sm:text-[10px] font-mono text-slate/40">
-                {card.role}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm font-semibold text-ink">
-              {card.name}
-            </p>
-            <p className="text-[10px] sm:text-[11px] text-slate/60 mt-0.5">
-              {card.meta}
-            </p>
-          </div>
-          {i === 0 && (
-            <div className="flex flex-col items-center py-1 sm:py-1.5">
-              <div className="w-px h-3 sm:h-4 bg-copper/30" />
-              <div className="w-6 h-6 rounded-full bg-copper/10 border border-copper/30 flex items-center justify-center my-0.5">
-                <Handshake size={13} weight="bold" className="text-copper" />
-              </div>
-              <div className="w-px h-3 sm:h-4 bg-copper/30" />
-            </div>
-          )}
+      {/* Commercial Breakdown Grid */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="p-2 rounded-lg bg-paper border border-ink/[0.04]">
+          <span className="text-[9px] font-mono uppercase text-slate/60 block">Unit Price</span>
+          <span className="text-sm font-bold text-ink font-mono mt-0.5 block">₹350 / kg</span>
+          <span className="text-[9px] text-slate">Material + Turning</span>
         </div>
-      ))}
+
+        <div className="p-2 rounded-lg bg-paper border border-ink/[0.04]">
+          <span className="text-[9px] font-mono uppercase text-slate/60 block">Tooling / NRE</span>
+          <span className="text-sm font-bold text-emerald-700 font-mono mt-0.5 block">₹0.00</span>
+          <span className="text-[9px] text-slate">Standard tooling on hand</span>
+        </div>
+
+        <div className="p-2 rounded-lg bg-paper border border-ink/[0.04]">
+          <span className="text-[9px] font-mono uppercase text-slate/60 block">Lead Time</span>
+          <span className="text-xs font-bold text-ink mt-0.5 block">14 Calendar Days</span>
+          <span className="text-[9px] text-slate">First article inspection</span>
+        </div>
+
+        <div className="p-2 rounded-lg bg-paper border border-ink/[0.04]">
+          <span className="text-[9px] font-mono uppercase text-slate/60 block">Payment Terms</span>
+          <span className="text-xs font-bold text-ink mt-0.5 block">Net 30 Days</span>
+          <span className="text-[9px] text-slate">Standard commercial PO</span>
+        </div>
+      </div>
+
+      <div className="pt-1">
+        <div className="w-full py-2 rounded-lg bg-copper text-surface text-xs font-semibold text-center tracking-wide shadow-xs">
+          Accept Quotation & Issue Purchase Order
+        </div>
+      </div>
     </div>
   );
 }

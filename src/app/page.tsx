@@ -1,23 +1,38 @@
-import { HeroProblemTransition } from "@/components/sections/HeroProblemTransition";
-import { PipelineSection } from "@/components/sections/PipelineSection";
-import { TwoSidedSection } from "@/components/sections/TwoSidedSection";
-import { MatchingSection } from "@/components/sections/MatchingSection";
-import { ProfilePreviewSection } from "@/components/sections/ProfilePreviewSection";
-import { VerificationSection } from "@/components/sections/VerificationSection";
-import { WhyLinksuppliedSection } from "@/components/sections/WhyLinksuppliedSection";
-import { CTASection } from "@/components/sections/CTASection";
+import { HeroProblemTransition } from "@/features/landing/HeroProblemTransition";
+import { PipelineSection } from "@/features/landing/PipelineSection";
+import { MatchingSection } from "@/features/landing/MatchingSection";
+import { VerificationSection } from "@/features/landing/VerificationSection";
+import { ProfilePreviewSection } from "@/features/landing/ProfilePreviewSection";
+import { TwoSidedSection } from "@/features/landing/TwoSidedSection";
+import { WhyLinksuppliedSection } from "@/features/landing/WhyLinksuppliedSection";
+import { CTASection } from "@/features/landing/CTASection";
 
 export default function Home() {
   return (
     <>
-      {/* 01 + 02 */} <HeroProblemTransition />
-      {/* 03 */} <PipelineSection />
-      {/* 04 */ } <TwoSidedSection />
-      {/* 05 */ } <MatchingSection />
-      {/* 06 */ } <ProfilePreviewSection />
-      {/* 07 + 08 */ } <VerificationSection />
-      {/* 09 */ } <WhyLinksuppliedSection />
-      {/* 10 */ } <CTASection />
+      {/* 01 + 02: Approved Hero & Problem Reveal */}
+      <HeroProblemTransition />
+
+      {/* 03: Better Approach — Traditional Search vs LINKSUPPLIED Model */}
+      <WhyLinksuppliedSection />
+
+      {/* 04: How It Works — 5-Step Pipeline with Realistic Product Previews */}
+      <PipelineSection />
+
+      {/* 05: Two-Sided Platform Network — Direct Procurement Teams & Plant Connections */}
+      <TwoSidedSection />
+
+      {/* 06: Verified Supplier Dossier Preview */}
+      <ProfilePreviewSection />
+
+      {/* 07: Explainable Matching Engine */}
+      <MatchingSection />
+
+      {/* 08: Multi-Tier Verification Framework */}
+      <VerificationSection />
+
+      {/* 09: Dual Intake Call to Action */}
+      <CTASection />
     </>
   );
 }

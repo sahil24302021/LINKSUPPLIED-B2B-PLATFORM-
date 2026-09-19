@@ -1,125 +1,146 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { BuyerOnboardingWizard } from "@/features/auth/BuyerOnboardingWizard";
+import { SupplierOnboardingWizard } from "@/features/auth/SupplierOnboardingWizard";
+import { RouteGate } from "@/components/auth/RouteGate";
+import {
+  ShoppingBag,
+  Factory,
+  ArrowRight,
+} from "@phosphor-icons/react";
+
+type RegistrationRole = "select" | "buyer" | "supplier";
 
 export default function RegisterPage() {
+  const [role, setRole] = useState<RegistrationRole>("select");
+
   return (
-    <div className="py-16 md:py-24">
-      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-ink">
-            Register your business
-          </h1>
-          <p className="mt-3 text-sm text-slate">
-            Tell us about your business so we can start matching you with
-            relevant companies.
-          </p>
-        </div>
+    <RouteGate>
+      <div className="py-12 md:py-20 bg-paper min-h-screen">
+      <div className="grid-page">
+        <div className="col-content max-w-2xl mx-auto">
+          {/* ── Role Selection Screen ──────────────────────────── */}
+          {role === "select" && (
+            <div className="space-y-8 text-center">
+              <div>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-copper font-bold px-2 py-0.5 rounded bg-copper/10">
+                    B2B ONBOARDING PORTAL
+                  </span>
+                </div>
 
-        <div className="bg-surface rounded-2xl border border-silver/15 p-6 md:p-8">
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-            <div>
-              <label
-                htmlFor="company-name"
-                className="block text-sm font-medium text-ink mb-1.5"
-              >
-                Company name
-              </label>
-              <input
-                id="company-name"
-                type="text"
-                placeholder="Your company name"
-                className="w-full px-3.5 py-2.5 bg-paper border border-silver/30 rounded-lg text-sm text-ink placeholder:text-silver focus:border-copper focus:ring-2 focus:ring-copper/15 outline-none transition-all duration-200"
-              />
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-ink">
+                  What brings you to LINKSUPPLIED?
+                </h1>
+
+                <p className="mt-3 text-sm text-slate max-w-[50ch] mx-auto leading-relaxed">
+                  Select your role to configure your dedicated workspace and matching preferences.
+                </p>
+              </div>
+
+              {/* Two Role Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                {/* Option 1: Buyer */}
+                <button
+                  type="button"
+                  onClick={() => setRole("buyer")}
+                  className="group bg-surface rounded-2xl border border-ink/[0.08] hover:border-copper p-6 shadow-xs transition-all hover:shadow-md text-left flex flex-col justify-between cursor-pointer"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-copper/10 text-copper flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                      <ShoppingBag size={24} weight="bold" />
+                    </div>
+
+                    <span className="text-[10px] font-mono uppercase text-slate tracking-wider block">
+                      Procurement / Engineering
+                    </span>
+                    <h2 className="text-lg font-bold text-ink mt-1">
+                      I&apos;m sourcing parts
+                    </h2>
+                    <p className="text-xs text-slate mt-2 leading-relaxed">
+                      Submit technical requirements, evaluate verified supplier machinery and tolerances, and receive direct quotations without broker markups.
+                    </p>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-copper mt-6 group-hover:translate-x-1 transition-transform">
+                    Continue as buyer
+                    <ArrowRight size={13} weight="bold" />
+                  </div>
+                </button>
+
+                {/* Option 2: Manufacturer */}
+                <button
+                  type="button"
+                  onClick={() => setRole("supplier")}
+                  className="group bg-surface rounded-2xl border border-ink/[0.08] hover:border-copper p-6 shadow-xs transition-all hover:shadow-md text-left flex flex-col justify-between cursor-pointer"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-ink/[0.06] text-ink flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                      <Factory size={24} weight="bold" />
+                    </div>
+
+                    <span className="text-[10px] font-mono uppercase text-slate tracking-wider block">
+                      Factory / Plant Operations
+                    </span>
+                    <h2 className="text-lg font-bold text-ink mt-1">
+                      I&apos;m a manufacturer
+                    </h2>
+                    <p className="text-xs text-slate mt-2 leading-relaxed">
+                      Build a verified capability dossier, undergo engineering audit, and receive relevant technical briefs matching your machine envelope.
+                    </p>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-copper mt-6 group-hover:translate-x-1 transition-transform">
+                    Continue as manufacturer
+                    <ArrowRight size={13} weight="bold" />
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-xs text-slate pt-2">
+                Already registered with LINKSUPPLIED?{" "}
+                <Link
+                  href="/login"
+                  className="text-copper hover:text-copper-muted font-semibold underline underline-offset-2"
+                >
+                  Log in to your portal
+                </Link>
+              </p>
             </div>
+          )}
 
-            <div>
-              <label
-                htmlFor="business-type"
-                className="block text-sm font-medium text-ink mb-1.5"
+          {/* ── Buyer Onboarding Flow ──────────────────────────── */}
+          {role === "buyer" && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setRole("select")}
+                className="text-xs text-slate hover:text-ink transition-colors font-medium flex items-center gap-1"
               >
-                Business type
-              </label>
-              <select
-                id="business-type"
-                className="w-full px-3.5 py-2.5 bg-paper border border-silver/30 rounded-lg text-sm text-ink focus:border-copper focus:ring-2 focus:ring-copper/15 outline-none transition-all duration-200"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Select your business type
-                </option>
-                <option value="manufacturer">Manufacturer</option>
-                <option value="supplier">Supplier</option>
-                <option value="distributor">Distributor</option>
-                <option value="buyer">Buyer / Procurement</option>
-                <option value="wholesaler">Wholesaler</option>
-              </select>
+                ← Switch role selection
+              </button>
+              <BuyerOnboardingWizard />
             </div>
+          )}
 
-            <div>
-              <label
-                htmlFor="industry"
-                className="block text-sm font-medium text-ink mb-1.5"
+          {/* ── Supplier Onboarding Flow ───────────────────────── */}
+          {role === "supplier" && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setRole("select")}
+                className="text-xs text-slate hover:text-ink transition-colors font-medium flex items-center gap-1"
               >
-                Primary industry
-              </label>
-              <input
-                id="industry"
-                type="text"
-                placeholder="e.g. Cosmetics Packaging, Textiles, Industrial Components"
-                className="w-full px-3.5 py-2.5 bg-paper border border-silver/30 rounded-lg text-sm text-ink placeholder:text-silver focus:border-copper focus:ring-2 focus:ring-copper/15 outline-none transition-all duration-200"
-              />
+                ← Switch role selection
+              </button>
+              <SupplierOnboardingWizard />
             </div>
-
-            <div>
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-ink mb-1.5"
-              >
-                Location
-              </label>
-              <input
-                id="location"
-                type="text"
-                placeholder="City, Country"
-                className="w-full px-3.5 py-2.5 bg-paper border border-silver/30 rounded-lg text-sm text-ink placeholder:text-silver focus:border-copper focus:ring-2 focus:ring-copper/15 outline-none transition-all duration-200"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-ink mb-1.5"
-              >
-                Business email
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                className="w-full px-3.5 py-2.5 bg-paper border border-silver/30 rounded-lg text-sm text-ink placeholder:text-silver focus:border-copper focus:ring-2 focus:ring-copper/15 outline-none transition-all duration-200"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full px-6 py-3 bg-copper hover:bg-copper-muted text-surface text-sm font-medium rounded-lg transition-colors duration-200"
-            >
-              Register
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-xs text-slate">
-            Already registered?{" "}
-            <Link
-              href="/login"
-              className="text-copper hover:text-copper-muted font-medium"
-            >
-              Log in
-            </Link>
-          </p>
+          )}
         </div>
       </div>
     </div>
+    </RouteGate>
   );
 }

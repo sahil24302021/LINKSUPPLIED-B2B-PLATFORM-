@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { DemoModeBanner } from "@/components/ui/DemoModeBanner";
+import { GlobalModals } from "@/components/ui/GlobalModals";
 import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
@@ -31,6 +34,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased bg-paper text-ink">
+        <Suspense fallback={null}>
+          <DemoModeBanner />
+        </Suspense>
+        <GlobalModals />
         <Navbar />
         <main>{children}</main>
         <Footer />

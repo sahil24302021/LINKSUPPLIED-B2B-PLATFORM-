@@ -5,7 +5,7 @@
   --color-ink: #1a1a2e;
   --color-graphite: #16213e;
   --color-charcoal: #2d2d3f;
-  --color-slate: #64748b;
+  --color-slate: #334155;
   --color-silver: #94a3b8;
   --color-paper: #f8f7f4;
   --color-surface: #fefdfb;
@@ -37,6 +37,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+}
+
+p {
+  line-height: 1.65;
 }
 
 /* ── Reduced Motion (global baseline) ────────────────────────── */
@@ -190,6 +194,354 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 500;
+}
+
+/* ── Standardized Typography Hierarchy ───────────────────────── */
+.title-page {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.title-section {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.title-card {
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.text-meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-slate);
+}
+
+/* ── Standardized Typography Scale (Phase L) ─────────────────── */
+.text-h1 {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.text-h2 {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.text-h3 {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.text-body {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-slate);
+}
+
+.text-body-sm {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-slate);
+}
+
+.text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--color-copper);
+}
+
+.text-id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 4-Tier Card System (Phase L) ────────────────────────────── */
+/* 1. Primary Information Card (Suppliers, Requirements, Quotes) */
+.card-primary {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+@media (min-width: 640px) {
+  .card-primary {
+    padding: 1.5rem;
+  }
+}
+.card-primary:hover {
+  border-color: rgba(26, 26, 46, 0.16);
+}
+
+/* 2. Supporting Card (Metadata, specs, statistics) */
+.card-supporting {
+  background-color: rgba(248, 247, 244, 0.75);
+  border: 1px solid rgba(26, 26, 46, 0.05);
+  border-radius: 0.75rem;
+  padding: 0.875rem;
+  font-size: 0.75rem;
+}
+
+/* 3. Interactive Card (Selectable choices, dashboard tiles) */
+.card-interactive {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.03);
+}
+@media (min-width: 640px) {
+  .card-interactive {
+    padding: 1.5rem;
+  }
+}
+.card-interactive:hover {
+  border-color: rgba(196, 133, 76, 0.45);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.05);
+}
+.card-interactive:active {
+  transform: scale(0.99);
+}
+
+/* 4. Evidence Card (Verification audit logs, documents) */
+.card-evidence {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-left: 3px solid var(--color-copper);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.75rem;
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.03);
+}
+
+/* ── Button Hierarchy & Micro-Interactions (Phase M) ─────────── */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -120%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  transition: none;
+}
+
+.btn-shimmer:hover::after {
+  left: 180%;
+  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-shimmer::after {
+    display: none !important;
+  }
+}
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-surface);
+  background-color: var(--color-copper);
+  border: 1px solid rgba(196, 133, 76, 0.35);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.08), 0 2px 4px rgba(196, 133, 76, 0.16);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  outline: none;
+}
+.btn-primary:hover {
+  background-color: var(--color-copper-muted);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(196, 133, 76, 0.32);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 1px 3px rgba(196, 133, 76, 0.2);
+}
+.btn-primary:focus-visible {
+  ring: 2px solid var(--color-copper);
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+.btn-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--color-surface);
+  background-color: var(--color-ink);
+  border: 1px solid rgba(26, 26, 46, 0.25);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  outline: none;
+}
+.btn-dark:hover {
+  background-color: var(--color-graphite);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.16);
+}
+.btn-dark:active {
+  transform: translateY(0) scale(0.985);
+}
+.btn-dark:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  background-color: var(--color-surface);
+  border: 1px solid rgba(26, 26, 46, 0.12);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.03);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+.btn-secondary:hover {
+  background-color: var(--color-paper);
+  border-color: rgba(26, 26, 46, 0.24);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 6px rgba(26, 26, 46, 0.06);
+}
+.btn-secondary:active {
+  transform: translateY(0) scale(0.985);
+}
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  background-color: transparent;
+  border: 1px solid rgba(26, 26, 46, 0.14);
+  border-radius: 0.5rem;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  outline: none;
+}
+.btn-outline:hover {
+  background-color: rgba(196, 133, 76, 0.05);
+  border-color: rgba(196, 133, 76, 0.4);
+  color: var(--color-copper);
+}
+.btn-outline:active {
+  transform: scale(0.985);
+}
+.btn-outline:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+.btn-tertiary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate);
+  background-color: transparent;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+.btn-tertiary:hover,
+.btn-ghost:hover {
+  color: var(--color-ink);
+  background-color: rgba(26, 26, 46, 0.05);
+}
+.btn-tertiary:active,
+.btn-ghost:active {
+  transform: scale(0.98);
+}
+.btn-tertiary:focus-visible,
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover,
+  .btn-dark:hover,
+  .btn-secondary:hover {
+    transform: none !important;
+  }
 }
 
 /* ── Verification Signal Animation ───────────────────────────── */

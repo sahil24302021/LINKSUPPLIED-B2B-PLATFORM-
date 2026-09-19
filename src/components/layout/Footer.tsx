@@ -1,16 +1,5 @@
 import Link from "next/link";
 
-const productLinks = [
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/discover", label: "Discover" },
-  { href: "/verification", label: "Verification" },
-];
-
-const companyLinks = [
-  { href: "/about", label: "About" },
-  { href: "/register", label: "Register your business" },
-];
-
 export function Footer() {
   return (
     <footer className="relative bg-ink text-silver/80 mt-auto overflow-hidden">
@@ -25,82 +14,123 @@ export function Footer() {
           backgroundSize: "48px 48px",
         }}
       />
-      <div className="relative z-10 grid-page py-16">
+      <div className="relative z-10 grid-page py-14 md:py-16">
         <div className="col-content">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12">
             {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
+            <div className="col-span-2 md:col-span-2 space-y-3">
               <Link
                 href="/"
-                className="text-surface font-semibold text-[17px] tracking-[0.01em]"
+                className="text-surface font-semibold text-[16.5px] tracking-[0.01em]"
               >
                 LINKSUPPLIED
               </Link>
-              <p className="mt-3 text-sm leading-relaxed max-w-[28ch] text-silver/60">
-                Business discovery, intelligence, and matching. Find the
-                businesses that actually fit.
+              <p className="text-xs sm:text-sm leading-relaxed max-w-[32ch] text-silver/60">
+                Business discovery, intelligence, and capability matching. Finding qualified manufacturing facilities that fit your exact engineering requirements.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-4">
+              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-3.5 font-semibold">
                 Product
               </h3>
-              <ul className="space-y-2.5">
-                {productLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm hover:text-surface transition-colors duration-200"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-4">
-                Company
-              </h3>
-              <ul className="space-y-2.5">
-                {companyLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm hover:text-surface transition-colors duration-200"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-4">
-                Legal
-              </h3>
-              <ul className="space-y-2.5">
+              <ul className="space-y-2.5 text-xs sm:text-[13px]">
                 <li>
-                  <span className="text-sm text-silver/40">Privacy Policy</span>
+                  <Link
+                    href="/discover"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Discover
+                  </Link>
                 </li>
                 <li>
-                  <span className="text-sm text-silver/40">Terms of Service</span>
+                  <Link
+                    href="/how-it-works"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    How it works
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/verification"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Verification
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* For Business */}
+            <div>
+              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-3.5 font-semibold">
+                For business
+              </h3>
+              <ul className="space-y-2.5 text-xs sm:text-[13px]">
+                <li>
+                  <Link
+                    href="/register"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Join as supplier
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/early-access"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Early access
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company & Legal */}
+            <div>
+              <h3 className="text-[11px] font-mono uppercase tracking-wider text-silver/40 mb-3.5 font-semibold">
+                Company
+              </h3>
+              <ul className="space-y-2.5 text-xs sm:text-[13px]">
+                <li>
+                  <Link
+                    href="/about"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/terms"
+                    className="hover:text-surface transition-colors duration-200"
+                  >
+                    Terms
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-16 pt-6 border-t border-silver/[0.08]">
-            <p className="text-[11px] text-silver/30 font-mono">
-              &copy; {new Date().getFullYear()} LINKSUPPLIED. All rights
-              reserved.
+          <div className="mt-12 pt-6 border-t border-silver/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-[11px] text-silver/35 font-mono">
+              &copy; {new Date().getFullYear()} LINKSUPPLIED. All rights reserved.
             </p>
+            <div className="flex items-center gap-3 text-xs text-silver/40 font-mono text-[11px]">
+              <span>Confidential B2B Procurement</span>
+              <span>·</span>
+              <span>Truthful Sourcing Standards</span>
+            </div>
           </div>
         </div>
       </div>

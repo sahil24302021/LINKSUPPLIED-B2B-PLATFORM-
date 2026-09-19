@@ -1,0 +1,43 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model EarlyAccessLead {
+  id                     String    @id @default(cuid())
+  referenceId            String    @unique
+  fullName               String
+  workEmail              String
+  phone                  String?
+  designation            String?
+  companyName            String
+  website                String?
+  industry               String?
+  location               String?
+  companySize            String?
+  role                   String    // "buyer" | "manufacturer" | "supplier" | "consultant"
+  buyerCommodities       String?
+  buyerCurrentMethod     String?
+  buyerVolume            String?
+  buyerBiggestProblem    String?
+  supplierProducts       String?
+  supplierProcesses      String?
+  supplierMaterials      String?
+  supplierCapacity       String?
+  supplierCertifications String?
+  platformIntent         String
+  source                 String?   @default("early-access-page")
+  ipHash                 String?   // Privacy-compliant one-way hash for abuse prevention
+  userAgent              String?
+  emailSent              Boolean   @default(false)
+  emailError             String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([workEmail])
+  @@index([createdAt])
+}
