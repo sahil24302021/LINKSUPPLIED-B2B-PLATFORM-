@@ -67,6 +67,7 @@ export function EarlyAccessWizard() {
   const [countryCode, setCountryCode] = useState<string>("+91");
   const [phoneNational, setPhoneNational] = useState<string>("");
   const [confirmedReference, setConfirmedReference] = useState<string>("");
+  const [isExisting, setIsExisting] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -116,6 +117,7 @@ export function EarlyAccessWizard() {
 
       if (res.ok && data.success) {
         setConfirmedReference(data.referenceId || "EA-2026-CONFIRMED");
+        setIsExisting(Boolean(data.isExisting));
         setStep(6);
       } else {
         setErrorMessage(
@@ -646,13 +648,23 @@ export function EarlyAccessWizard() {
 
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-copper font-bold px-2 py-0.5 rounded bg-copper/10">
-                APPLICATION RECEIVED
+                {isExisting ? "EXISTING REGISTRATION" : "APPLICATION RECEIVED"}
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-ink mt-2">
-                You&apos;re on the Priority List
+                {isExisting
+                  ? "You're Already on the Priority List"
+                  : "You're on the Priority List"}
               </h2>
               <p className="text-xs text-slate mt-1 max-w-[46ch] mx-auto leading-relaxed break-words">
-                Thank you, <strong className="text-ink">{form.fullName || "Partner"}</strong>. Your application has been registered under Reference <span className="font-mono text-ink font-semibold">{confirmedReference}</span>.
+                {isExisting ? (
+                  <>
+                    Welcome back, <strong className="text-ink">{form.fullName || "Partner"}</strong>. Your application is already registered under Reference <span className="font-mono text-ink font-semibold">{confirmedReference}</span>.
+                  </>
+                ) : (
+                  <>
+                    Thank you, <strong className="text-ink">{form.fullName || "Partner"}</strong>. Your application has been registered under Reference <span className="font-mono text-ink font-semibold">{confirmedReference}</span>.
+                  </>
+                )}
               </p>
             </div>
 

@@ -18,6 +18,46 @@ function hashClientIp(ip: string | null): string | null {
 }
 
 /**
+ * Normalizes phone numbers for duplicate detection:
+ * - strips whitespace, hyphens, parentheses, and dots
+ * - preserves leading '+' if present
+ */
+function normalizePhone(phone: string | null | undefined): string | null {
+  if (!phone || typeof phone !== "string") return null;
+  const cleaned = phone.replace(/[\s\-().]/g, "").trim();
+  return cleaned.length >= 7 ? cleaned : null;
+}
+
+/**
+ * Robustly checks if two phone numbers match, handling formatting and country-code variations.
+ */
+function arePhonesEqual(phone1: string | null | undefined, phone2: string | null | undefined): boolean {
+  const n1 = normalizePhone(phone1);
+  const n2 = normalizePhone(phone2);
+  if (!n1 || !n2) return false;
+
+  // Direct normalized match (e.g. "+919876543210" === "+919876543210")
+  if (n1 === n2) return true;
+
+  // Strip leading '+' (e.g. "+919876543210" vs "919876543210")
+  const noPlus1 = n1.replace(/^\+/, "");
+  const noPlus2 = n2.replace(/^\+/, "");
+  if (noPlus1 === noPlus2) return true;
+
+  // If one has country code (e.g. +91 9876543210) and one doesn't (98765-43210),
+  // compare significant national digits (min 10 digits)
+  const digits1 = n1.replace(/\D/g, "");
+  const digits2 = n2.replace(/\D/g, "");
+  if (digits1.length >= 10 && digits2.length >= 10) {
+    if (digits1 === digits2) return true;
+    if (digits1.length === 10 && digits2.endsWith(digits1)) return true;
+    if (digits2.length === 10 && digits1.endsWith(digits2)) return true;
+  }
+
+  return false;
+}
+
+/**
  * Generates an Early Access reference ID (e.g. EA-2026-4821)
  * Safely handles collisions with retry loop and fallback suffix.
  */
@@ -138,22 +178,44 @@ export async function POST(req: NextRequest) {
     const ipHash = hashClientIp(rawIp);
     const userAgent = req.headers.get("user-agent")?.slice(0, 255) || null;
 
-    // 6. Duplicate mitigation (if exact same email submitted within last 5 minutes)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const recentSubmission = await prisma.earlyAccessLead.findFirst({
-      where: {
-        workEmail,
-        createdAt: { gte: fiveMinutesAgo },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    // 6. PERMANENT Duplicate Mitigation (Check existing lead across the entire table by workEmail OR phone)
+    let existingLead: { id: string; referenceId: string; fullName: string } | null =
+      await prisma.earlyAccessLead.findFirst({
+        where: { workEmail },
+        select: { id: true, referenceId: true, fullName: true },
+        orderBy: { createdAt: "desc" },
+      });
 
-    if (recentSubmission) {
+    // If not matched by email, check by phone if submitted phone is provided
+    if (!existingLead && phone) {
+      const normalizedSubmitted = normalizePhone(phone);
+      if (normalizedSubmitted) {
+        const candidatesWithPhone = await prisma.earlyAccessLead.findMany({
+          where: { phone: { not: null } },
+          select: { id: true, referenceId: true, phone: true, fullName: true },
+          orderBy: { createdAt: "desc" },
+        });
+
+        for (const candidate of candidatesWithPhone) {
+          if (arePhonesEqual(candidate.phone, phone)) {
+            existingLead = {
+              id: candidate.id,
+              referenceId: candidate.referenceId,
+              fullName: candidate.fullName,
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    if (existingLead) {
       return NextResponse.json(
         {
           success: true,
-          referenceId: recentSubmission.referenceId,
-          message: "Your application is already registered under this reference code.",
+          isExisting: true,
+          referenceId: existingLead.referenceId,
+          message: "You're already on the priority list.",
         },
         { status: 200 }
       );
@@ -280,6 +342,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
+        isExisting: false,
         referenceId: lead.referenceId,
       },
       { status: 200 }
