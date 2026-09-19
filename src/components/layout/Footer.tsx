@@ -122,11 +122,11 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="mt-12 pt-6 border-t border-silver/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="mt-12 pt-6 border-t border-silver/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
             <p className="text-[11px] text-silver/35 font-mono">
               &copy; {new Date().getFullYear()} LINKSUPPLIED. All rights reserved.
             </p>
-            <div className="flex items-center gap-3 text-xs text-silver/40 font-mono text-[11px]">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-xs text-silver/40 font-mono text-[11px]">
               <span>Confidential B2B Procurement</span>
               <span>·</span>
               <span>Truthful Sourcing Standards</span>

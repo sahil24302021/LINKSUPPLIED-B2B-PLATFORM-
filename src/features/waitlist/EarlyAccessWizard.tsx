@@ -131,19 +131,19 @@ export function EarlyAccessWizard() {
   };
 
   return (
-    <div className="bg-surface rounded-2xl border border-ink/[0.08] shadow-xs overflow-hidden max-w-2xl mx-auto">
+    <div className="bg-surface rounded-2xl border border-ink/[0.08] shadow-xs overflow-hidden max-w-2xl mx-auto w-full">
       {/* Header bar */}
-      <div className="p-5 sm:p-6 border-b border-ink/[0.06] bg-paper">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-copper font-bold px-2 py-0.5 rounded bg-copper/10">
+      <div className="p-4 sm:p-5 md:p-6 border-b border-ink/[0.06] bg-paper">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-copper font-bold px-2 py-0.5 rounded bg-copper/10 shrink-0">
               PRIORITY ACCESS APPLICATION
             </span>
-            <span className="text-xs font-mono text-slate">
+            <span className="text-xs font-mono text-slate shrink-0">
               Step {step} of 5
             </span>
           </div>
-          <span className="text-xs text-slate font-medium">
+          <span className="text-xs text-slate font-medium shrink-0">
             {step === 1 && "Contact Person"}
             {step === 2 && "Company Profile"}
             {step === 3 && "Operational Role"}
@@ -167,15 +167,15 @@ export function EarlyAccessWizard() {
         )}
       </div>
 
-      <div className="p-6 sm:p-8">
+      <div className="p-4 sm:p-6 md:p-8">
         {/* ── STEP 1: About You ──────────────────────────────── */}
         {step === 1 && (
-          <div className="space-y-5 max-w-md mx-auto">
+          <div className="space-y-5 max-w-md mx-auto w-full">
             <div>
-              <h2 className="text-xl font-bold text-ink">
+              <h2 className="text-lg sm:text-xl font-bold text-ink">
                 About you
               </h2>
-              <p className="text-xs text-slate mt-1">
+              <p className="text-xs text-slate mt-1 leading-relaxed">
                 Tell us who will be leading sourcing or capacity management at your organization.
               </p>
             </div>
@@ -191,7 +191,7 @@ export function EarlyAccessWizard() {
                   onChange={(e) => updateField("fullName", e.target.value)}
                   placeholder="e.g. David Mueller"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                  className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                 />
               </div>
 
@@ -205,20 +205,20 @@ export function EarlyAccessWizard() {
                   onChange={(e) => updateField("workEmail", e.target.value)}
                   placeholder="d.mueller@heavy-machinery.de"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                  className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-ink mb-1">
                     Phone Number
                   </label>
-                  <div className="flex items-center rounded-lg border border-ink/[0.12] bg-paper focus-within:border-copper transition-colors overflow-hidden">
+                  <div className="flex items-center rounded-lg border border-ink/[0.12] bg-paper focus-within:border-copper transition-colors overflow-hidden w-full">
                     <select
                       value={countryCode}
                       onChange={(e) => handleCountryCodeChange(e.target.value)}
-                      className="w-[92px] shrink-0 bg-transparent pl-2.5 pr-1 py-2.5 text-xs text-ink font-medium border-r border-ink/[0.08] outline-none cursor-pointer truncate"
+                      className="w-[85px] sm:w-[92px] shrink-0 bg-transparent pl-2 sm:pl-2.5 pr-1 py-2.5 text-xs text-ink font-medium border-r border-ink/[0.08] outline-none cursor-pointer truncate"
                       aria-label="Country Code Selector"
                     >
                       {COUNTRY_CODES.map((c) => (
@@ -237,7 +237,7 @@ export function EarlyAccessWizard() {
                   </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-ink mb-1">
                     Your Title
                   </label>
@@ -246,7 +246,7 @@ export function EarlyAccessWizard() {
                     value={form.designation}
                     onChange={(e) => updateField("designation", e.target.value)}
                     placeholder="Head of Global Sourcing"
-                    className="w-full px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   />
                 </div>
               </div>
@@ -267,12 +267,12 @@ export function EarlyAccessWizard() {
 
         {/* ── STEP 2: Company Information ────────────────────── */}
         {step === 2 && (
-          <div className="space-y-5 max-w-md mx-auto">
+          <div className="space-y-5 max-w-md mx-auto w-full">
             <div>
-              <h2 className="text-xl font-bold text-ink">
+              <h2 className="text-lg sm:text-xl font-bold text-ink">
                 Company profile
               </h2>
-              <p className="text-xs text-slate mt-1">
+              <p className="text-xs text-slate mt-1 leading-relaxed">
                 Help us understand your enterprise scale and operating sector.
               </p>
             </div>
@@ -288,19 +288,19 @@ export function EarlyAccessWizard() {
                   onChange={(e) => updateField("companyName", e.target.value)}
                   placeholder="Mueller Engineering Group"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                  className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-ink mb-1">
                     Industry
                   </label>
                   <select
                     value={form.industry}
                     onChange={(e) => updateField("industry", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none truncate"
                   >
                     <option value="">Select industry...</option>
                     <option value="Precision Engineering">Precision Engineering</option>
@@ -311,14 +311,14 @@ export function EarlyAccessWizard() {
                   </select>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-ink mb-1">
                     Company Size
                   </label>
                   <select
                     value={form.companySize}
                     onChange={(e) => updateField("companySize", e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   >
                     <option value="">Select company size...</option>
                     <option value="1-10">1–10 employees</option>
@@ -339,7 +339,7 @@ export function EarlyAccessWizard() {
                   value={form.location}
                   onChange={(e) => updateField("location", e.target.value)}
                   placeholder="Stuttgart, Germany"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                  className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                 />
               </div>
             </div>
@@ -369,12 +369,12 @@ export function EarlyAccessWizard() {
 
         {/* ── STEP 3: Role Selection ─────────────────────────── */}
         {step === 3 && (
-          <div className="space-y-5 max-w-md mx-auto">
+          <div className="space-y-5 max-w-md mx-auto w-full">
             <div>
-              <h2 className="text-xl font-bold text-ink">
+              <h2 className="text-lg sm:text-xl font-bold text-ink">
                 How will your team use LINKSUPPLIED?
               </h2>
-              <p className="text-xs text-slate mt-1">
+              <p className="text-xs text-slate mt-1 leading-relaxed">
                 Select your primary operational profile.
               </p>
             </div>
@@ -406,16 +406,16 @@ export function EarlyAccessWizard() {
                   key={r.id}
                   type="button"
                   onClick={() => updateField("role", r.id as EarlyAccessRole)}
-                  className={`w-full p-4 rounded-xl border text-left transition-all ${
+                  className={`w-full p-3.5 sm:p-4 rounded-xl border text-left transition-all ${
                     form.role === r.id
                       ? "bg-copper/10 border-copper ring-1 ring-copper"
                       : "bg-paper border-ink/[0.08] hover:border-ink/[0.16]"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-ink text-sm">{r.title}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-ink text-sm leading-snug">{r.title}</p>
                     {form.role === r.id && (
-                      <CheckCircle size={18} className="text-copper" weight="fill" />
+                      <CheckCircle size={18} className="text-copper shrink-0" weight="fill" />
                     )}
                   </div>
                   <p className="text-xs text-slate mt-1 leading-relaxed">{r.desc}</p>
@@ -448,14 +448,14 @@ export function EarlyAccessWizard() {
 
         {/* ── STEP 4: Tailored Qualification ─────────────────── */}
         {step === 4 && (
-          <div className="space-y-5 max-w-md mx-auto">
+          <div className="space-y-5 max-w-md mx-auto w-full">
             <div>
-              <h2 className="text-xl font-bold text-ink">
+              <h2 className="text-lg sm:text-xl font-bold text-ink">
                 {form.role === "buyer"
                   ? "Your Sourcing Scope"
                   : "Your Manufacturing Scope"}
               </h2>
-              <p className="text-xs text-slate mt-1">
+              <p className="text-xs text-slate mt-1 leading-relaxed">
                 Help us qualify your application for the appropriate onboarding wave.
               </p>
             </div>
@@ -471,7 +471,7 @@ export function EarlyAccessWizard() {
                     value={form.buyerCommodities}
                     onChange={(e) => updateField("buyerCommodities", e.target.value)}
                     placeholder="e.g. 5-axis CNC titanium parts, precision forgings"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   />
                 </div>
 
@@ -482,7 +482,7 @@ export function EarlyAccessWizard() {
                   <select
                     value={form.buyerCurrentMethod}
                     onChange={(e) => updateField("buyerCurrentMethod", e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none truncate"
                   >
                     <option value="">Select current method...</option>
                     <option value="Direct supplier outreach & trade fairs">Direct supplier outreach & trade fairs</option>
@@ -501,7 +501,7 @@ export function EarlyAccessWizard() {
                     value={form.buyerBiggestProblem}
                     onChange={(e) => updateField("buyerBiggestProblem", e.target.value)}
                     placeholder="e.g. Suppliers claiming 5-axis machines when they only have 3-axis, or unpredictable lead times."
-                    className="w-full px-3.5 py-2 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none resize-none"
+                    className="w-full min-w-0 px-3.5 py-2 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none resize-none"
                   />
                 </div>
               </div>
@@ -516,7 +516,7 @@ export function EarlyAccessWizard() {
                     value={form.supplierProcesses}
                     onChange={(e) => updateField("supplierProcesses", e.target.value)}
                     placeholder="e.g. 5-Axis VMC, Wire EDM, CMM Metrology Lab"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   />
                 </div>
 
@@ -529,7 +529,7 @@ export function EarlyAccessWizard() {
                     value={form.supplierCapacity}
                     onChange={(e) => updateField("supplierCapacity", e.target.value)}
                     placeholder="e.g. 25,000 units/mo, open slots Q4"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   />
                 </div>
 
@@ -542,7 +542,7 @@ export function EarlyAccessWizard() {
                     value={form.supplierCertifications}
                     onChange={(e) => updateField("supplierCertifications", e.target.value)}
                     placeholder="e.g. ISO 9001:2015, IATF 16949, AS9100D"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
+                    className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none"
                   />
                 </div>
               </div>
@@ -573,12 +573,12 @@ export function EarlyAccessWizard() {
 
         {/* ── STEP 5: Platform Objectives ────────────────────── */}
         {step === 5 && (
-          <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto w-full">
             <div>
-              <h2 className="text-xl font-bold text-ink">
+              <h2 className="text-lg sm:text-xl font-bold text-ink">
                 What would you want LINKSUPPLIED to help you do?
               </h2>
-              <p className="text-xs text-slate mt-1">
+              <p className="text-xs text-slate mt-1 leading-relaxed">
                 Your direct input guides our engineering qualification pipeline.
               </p>
             </div>
@@ -594,7 +594,7 @@ export function EarlyAccessWizard() {
                   onChange={(e) => updateField("platformIntent", e.target.value)}
                   placeholder="e.g. Connect directly with audited CNC machining facilities capable of holding ±0.01mm tolerances without going through 3 layers of middlemen."
                   required
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none resize-none"
+                  className="w-full min-w-0 px-3.5 py-2.5 rounded-lg border border-ink/[0.12] bg-paper text-ink outline-none resize-none"
                 />
               </div>
 
@@ -624,7 +624,8 @@ export function EarlyAccessWizard() {
               <Button
                 type="submit"
                 variant="primary"
-                size="lg"
+                size="md"
+                className="sm:px-6"
                 disabled={isSubmitting}
                 iconLeading={
                   isSubmitting ? undefined : <Sparkle size={15} weight="fill" />
@@ -638,7 +639,7 @@ export function EarlyAccessWizard() {
 
         {/* ── STEP 6: Confirmation ───────────────────────────── */}
         {step === 6 && (
-          <div className="space-y-6 max-w-md mx-auto text-center py-4">
+          <div className="space-y-6 max-w-md mx-auto text-center py-4 w-full">
             <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
               <CheckCircle size={32} weight="fill" />
             </div>
@@ -647,26 +648,26 @@ export function EarlyAccessWizard() {
               <span className="text-[10px] font-mono uppercase tracking-widest text-copper font-bold px-2 py-0.5 rounded bg-copper/10">
                 APPLICATION RECEIVED
               </span>
-              <h2 className="text-2xl font-bold text-ink mt-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-ink mt-2">
                 You&apos;re on the Priority List
               </h2>
-              <p className="text-xs text-slate mt-1 max-w-[46ch] mx-auto leading-relaxed">
+              <p className="text-xs text-slate mt-1 max-w-[46ch] mx-auto leading-relaxed break-words">
                 Thank you, <strong className="text-ink">{form.fullName || "Partner"}</strong>. Your application has been registered under Reference <span className="font-mono text-ink font-semibold">{confirmedReference}</span>.
               </p>
             </div>
 
-            <div className="bg-paper p-4 rounded-xl border border-ink/[0.06] text-xs text-left space-y-2 text-slate">
+            <div className="bg-paper p-4 rounded-xl border border-ink/[0.06] text-xs text-left space-y-2 text-slate break-words">
               <span className="font-bold text-ink font-mono uppercase text-[10px] block">
                 Next Operational Milestones:
               </span>
               <ul className="list-disc list-inside space-y-1 text-[11px]">
                 <li>Manufacturing capability team reviews corporate domain and sourcing fit.</li>
-                <li>You will receive a confidential invitation link at <span className="font-medium text-ink">{form.workEmail || "your email"}</span>.</li>
+                <li>You will receive a confidential invitation link at <span className="font-medium text-ink break-all">{form.workEmail || "your email"}</span>.</li>
                 <li>Direct engineering onboarding call scheduled for early pilot access.</li>
               </ul>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full">
               <Button
                 href="/discover"
                 variant="primary"
