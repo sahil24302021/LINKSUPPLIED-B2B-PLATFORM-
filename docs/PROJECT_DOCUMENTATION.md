@@ -27,7 +27,7 @@
 | :--- | :--- | :--- |
 | **Frontend UI/UX** | **100% Finalized** | All 16 public and gated routes, responsive layout (Desktop 1440px + Mobile 390px), GSAP & Motion animations, typography, and theme tokens. |
 | **Interactive Demo Mode** | **100% Finalized** | Client-side simulation mode allowing full walkthrough of Buyer and Supplier dashboards, RFQ workspaces, and quotation comparisons without credentials. |
-| **Early Access Backend** | **100% Functional** | Dedicated production-grade endpoint (`POST /api/early-access`), PostgreSQL database (`EarlyAccessLead`), collision-safe reference codes, and Resend transactional confirmation emails. |
+| **Early Access Backend** | **100% Functional** | Dedicated production-grade endpoint (`POST /api/early-access`), PostgreSQL database (`EarlyAccessLead`), collision-safe reference codes, permanent duplicate protection (email OR phone), and dual-provider confirmation emails (Gmail Apps Script primary → Resend fallback). |
 | **Full Product Backend** | **Intentionally Deferred** | User authentication, payment processing, live RFQ persistence, and automated matching algorithms are intentionally omitted at this stage. |
 
 ---
@@ -72,37 +72,55 @@
                           Input Sanitization, ipHash)
                                 │
                                 ▼
-                      [Prisma Client: db.ts]
-                                │
-                                ▼
-                       PostgreSQL Database
-                     Table: "EarlyAccessLead"
-                                │
-                   ┌────────────┴────────────┐
-                   ▼                         ▼
-             [DB Success]               [DB Failure]
-                   │                         │
-                   ▼                         ▼
-        [sendConfirmationEmail]        Return HTTP 500
-          (Resend SDK API)             (No email sent;
-                   │                    safe user error)
-        ┌──────────┴──────────┐
-        ▼                     ▼
-   [Email Sent]         [Email Failed]
-   emailSent: true      emailSent: false
-                        emailError logged
-                        (Lead KEPT in DB)
-        │                     │
-        └──────────┬──────────┘
-                   ▼
-          Return HTTP 200 OK
-        { success: true, referenceId }
-                   │
-                   ▼
-          [EarlyAccessWizard]
-          Display Confirmation
-          "You're on the Priority List"
-          (Ref: EA-2026-XXXX)
+                    ┌──── PERMANENT DUPLICATE CHECK ────┐
+                    │  1. workEmail match (normalized)   │
+                    │  2. Phone match (normalized,       │
+                    │     handles country-code variants) │
+                    └──────────┬──────────────┬──────────┘
+                               │              │
+                          [EXISTING]      [NEW LEAD]
+                               │              │
+                               ▼              ▼
+                        Return 200 OK   [Prisma Client: db.ts]
+                       { isExisting:         │
+                         true,               ▼
+                         referenceId }   PostgreSQL Database
+                               │        Table: "EarlyAccessLead"
+                               ▼              │
+                      [EarlyAccessWizard]     ┌┴────────────────┐
+                       Shows:                 ▼                 ▼
+                      "You're Already    [DB Success]      [DB Failure]
+                       on the Priority        │                 │
+                       List"                  ▼                 ▼
+                       (0 new DB rows)  [sendEarlyAccessConfirmation]
+                       (0 emails sent)        │                Return 500
+                                    ┌─────────┴─────────┐
+                                    ▼                   ▼
+                             [Gmail Apps Script]  [Gmail Failed?]
+                             (Primary Provider)        │
+                             8s timeout                ▼
+                                    │           [Resend Fallback]
+                                    │                  │
+                            ┌───────┴──────┐   ┌──────┴──────┐
+                            ▼              ▼   ▼             ▼
+                       [Sent OK]     [Failed] [Sent OK]  [Failed]
+                       emailSent:    Falls    emailSent:  emailSent:
+                       true          back to  true        false
+                       provider:     Resend   provider:   (Lead KEPT)
+                       "gmail"       ──►      "resend"
+                                    │              │
+                                    └──────┬───────┘
+                                           ▼
+                                    Return HTTP 200 OK
+                                  { success: true,
+                                    isExisting: false,
+                                    referenceId }
+                                           │
+                                           ▼
+                                 [EarlyAccessWizard]
+                                  Display Confirmation
+                                 "You're on the Priority List"
+                                 (Ref: EA-2026-XXXX)
 ```
 
 ### Homepage Component Structure
@@ -206,7 +224,7 @@ linksupplied-app/
 │   │   ├── coming-soon.ts       # Global event dispatchers for modals
 │   │   ├── db.ts                # PrismaClient singleton instance for PostgreSQL
 │   │   ├── demo-mode.ts         # Client helper functions for demo mode cookies/storage
-│   │   ├── email.ts             # Resend transactional email dispatch service
+│   │   ├── email.ts             # Dual-provider email dispatch (Gmail Apps Script primary → Resend fallback)
 │   │   └── utils.ts             # cn() classnames merger helper
 │   ├── services/                # API client architecture placeholders for future backend
 │   │   └── README.md
@@ -342,13 +360,30 @@ if (process.env.NODE_ENV !== "production") {
 
 ---
 
-## 8. Transactional Email Architecture (Resend)
+## 8. Transactional Email Architecture (Dual-Provider)
 
-Confirmation emails are handled by [`src/lib/email.ts`](file:///Users/sahilkumar/Desktop/LINKSUPPLIED/linksupplied-app/src/lib/email.ts) using the official `resend` SDK.
+Confirmation emails are handled by [`src/lib/email.ts`](file:///Users/sahilkumar/Desktop/LINKSUPPLIED/linksupplied-app/src/lib/email.ts) using a dual-provider strategy:
+
+### Provider Priority
+| Priority | Provider | Sender Address | Trigger |
+| :--- | :--- | :--- | :--- |
+| **1 (Primary)** | Google Apps Script Web App | `linksupplied@gmail.com` | `GMAIL_APP_SCRIPT_URL` is set |
+| **2 (Fallback)** | Resend SDK | Configured via `EARLY_ACCESS_FROM_EMAIL` | Gmail fails or `GMAIL_APP_SCRIPT_URL` unset |
+| **3 (Skip)** | None | — | Neither provider configured (local dev) |
+
+### Gmail Apps Script Integration
+- The Google Apps Script Web App receives a JSON payload: `{ to, subject, htmlBody, textBody, name, referenceId }`
+- 8-second safety timeout via `AbortSignal.timeout(8000)`
+- On HTTP error or timeout, automatically falls back to Resend
+- Apps Script URL is configured via `GMAIL_APP_SCRIPT_URL` env var
 
 ### Email Copy & Standards
 - **Subject:** `You're on the LINKSUPPLIED Early Access list`
-- **Sender:** Configured via `EARLY_ACCESS_FROM_EMAIL` (e.g. `LINKSUPPLIED <hello@linksupplied.com>` or `LINKSUPPLIED <onboarding@resend.dev>`)
+- **HTML Template:** Responsive card-style layout with:
+  - Light gray background (`#f8fafc`)
+  - White card with subtle border & shadow
+  - LINKSUPPLIED copper branding (`#c26138`)
+  - Application reference ID display
 - **Body:**
   ```text
   Hi {{name}},
@@ -359,9 +394,17 @@ Confirmation emails are handled by [`src/lib/email.ts`](file:///Users/sahilkumar
 
   We'll be in touch soon.
 
+  Application Ref: {{referenceId}}
+
   — Team LINKSUPPLIED
   ```
-- **Fallback Guarantee:** If `RESEND_API_KEY` is not provided (e.g., in local development or before domain verification), the email step is logged safely, `emailSent: false` is recorded, but the database lead remains safely saved, and the user receives a success response.
+- **Fallback Guarantee:** If neither `GMAIL_APP_SCRIPT_URL` nor `RESEND_API_KEY` is provided, the email step is logged safely, `emailSent: false` is recorded, but the database lead remains safely saved, and the user receives a success response.
+- **Key Functions:**
+  - `sendEarlyAccessConfirmation()` — Master dispatcher (routes to Gmail → Resend → skip)
+  - `sendViaGoogleAppsScript()` — Gmail provider implementation
+  - `sendViaResend()` — Resend provider implementation
+  - `buildConfirmationHtml()` — Shared HTML email template builder
+  - `buildConfirmationText()` — Plain-text fallback builder
 
 ---
 
@@ -373,25 +416,44 @@ All environment variables are declared in [`.env.example`](file:///Users/sahilku
 # 1. Database Connection URL (PostgreSQL)
 # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 # Example local: postgresql://sahilkumar@localhost:5432/linksupplied
-# Example production: postgresql://user:pass@ep-cool-db.aws.neon.tech/linksupplied?sslmode=require
+# Example production (Supabase IPv4 Pooler): postgresql://USER:PASSWORD@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+# IMPORTANT: Vercel serverless does NOT support IPv6. Use Supabase IPv4 Pooler, NOT direct connections.
 DATABASE_URL="postgresql://sahilkumar@localhost:5432/linksupplied"
 
-# 2. Resend API Key
+# 2. Gmail Apps Script Web App URL (Primary Email Provider)
+# Deploy a Google Apps Script Web App that sends email via GmailApp.sendEmail()
+# If set, confirmation emails are dispatched via Gmail (from linksupplied@gmail.com)
+# If unset or fails, Resend is used as fallback
+GMAIL_APP_SCRIPT_URL=""
+
+# 3. Resend API Key (Fallback Email Provider)
 # Generated at https://resend.com/api-keys
 # NEVER prefix this with NEXT_PUBLIC_! Keep strictly server-side.
 RESEND_API_KEY=""
 
-# 3. Transactional Email Sender Address
+# 4. Transactional Email Sender Address (Resend only)
 # In production after domain verification: "LINKSUPPLIED <hello@linksupplied.com>"
 # For testing prior to domain verification: "LINKSUPPLIED <onboarding@resend.dev>"
 EARLY_ACCESS_FROM_EMAIL="LINKSUPPLIED <onboarding@resend.dev>"
 
-# 4. Optional IP Hash Salt (for GDPR privacy-compliant abuse hashing)
+# 5. Optional IP Hash Salt (for GDPR privacy-compliant abuse hashing)
 IP_HASH_SALT="linksupplied_privacy_salt"
 ```
 
+### Vercel Production Environment Variables
+| Variable | Required | Description |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | **Yes** | PostgreSQL connection string (must use Supabase IPv4 Pooler for Vercel) |
+| `GMAIL_APP_SCRIPT_URL` | **Recommended** | Google Apps Script Web App URL for Gmail dispatch |
+| `RESEND_API_KEY` | **Recommended** | Resend API key (fallback email provider) |
+| `EARLY_ACCESS_FROM_EMAIL` | Optional | Resend sender address (defaults to `LINKSUPPLIED <hello@linksupplied.com>`) |
+| `IP_HASH_SALT` | Optional | Custom salt for privacy-compliant IP hashing |
+
 > [!CAUTION]
 > **Security Rule:** Never commit `.env` or `.env.local`. Both are strictly ignored in `.gitignore`. Real credentials must only be injected via your hosting environment settings (e.g., Vercel Project Settings).
+
+> [!IMPORTANT]
+> **Supabase + Vercel:** Vercel serverless functions do NOT support IPv6. Always use the Supabase **IPv4 Pooler** connection string (`aws-0-ap-south-1.pooler.supabase.com:5432`), NOT the direct database host.
 
 ---
 
@@ -481,8 +543,16 @@ curl -X POST http://localhost:3000/api/early-access \
 ```
 *Expected response:* `{"success":false,"message":"Please provide your company name."}` (HTTP 400).
 
-### 4. Test Deduplication
-Submitting the same email address within 5 minutes returns their existing reference code without duplicating records in the database.
+### 4. Test Duplicate Protection (Permanent)
+Submitting the same **email address** (case-insensitive, trimmed) returns the existing reference code without creating a new record or sending another email.
+
+### 5. Test Phone-Based Duplicate Detection
+Submitting a new email address but the **same phone number** (handles formatting variations like `+91 98765 43210` vs `9876543210`) also returns the existing reference code. The `isExisting: true` flag triggers the "You're Already on the Priority List" UI state.
+
+**Expected duplicate response:**
+```json
+{"success":true,"isExisting":true,"referenceId":"EA-2026-XXXX","message":"You're already on the priority list."}
+```
 
 ---
 
@@ -491,10 +561,11 @@ Submitting the same email address within 5 minutes returns their existing refere
 When deploying LINKSUPPLIED to production (e.g. Vercel, Railway, Render):
 
 ### 1. Vercel Environment Configuration
-In the Vercel Project Settings $\rightarrow$ Environment Variables:
-1. `DATABASE_URL`: Add your production PostgreSQL connection string (Supabase, Neon, Railway, AWS RDS).
-2. `RESEND_API_KEY`: Add your live API key from [resend.com](https://resend.com).
-3. `EARLY_ACCESS_FROM_EMAIL`: Set to `LINKSUPPLIED <hello@linksupplied.com>`.
+In the Vercel Project Settings → Environment Variables:
+1. `DATABASE_URL`: Add your production PostgreSQL connection string (**must use Supabase IPv4 Pooler** for Vercel serverless compatibility).
+2. `GMAIL_APP_SCRIPT_URL`: Add the deployed Google Apps Script Web App URL for Gmail email dispatch.
+3. `RESEND_API_KEY`: Add your live API key from [resend.com](https://resend.com) (used as fallback).
+4. `EARLY_ACCESS_FROM_EMAIL`: Set to `LINKSUPPLIED <hello@linksupplied.com>` (Resend sender).
 
 ### 2. Build & Database Setup Step
 In Vercel Build Settings:
@@ -516,7 +587,8 @@ In Vercel Build Settings:
 2. **`src/features/landing/TwoSidedSection.tsx`:** Contains the desktop `top-[80px]` and mobile `top-[66px]` clearance offsets that keep the `05 — TWO-SIDED NETWORK` indicator visible below the 54px navbar.
 3. **`src/components/ui/PinnedPipeline.tsx`:** Controls the pinned 5-step interactive horizontal/vertical pipeline sequence.
 4. **`src/hooks/use-isomorphic-layout-effect.ts`:** Must always be used instead of standard `useLayoutEffect` for GSAP matchMedia to prevent Next.js SSR hydration mismatches.
-5. **`src/app/api/early-access/route.ts`:** Enforces the strict rule that database persistence MUST succeed before attempting email dispatch.
+5. **`src/app/api/early-access/route.ts`:** Enforces the strict rule that database persistence MUST succeed before attempting email dispatch. Also contains the permanent duplicate detection logic (email OR phone normalization) — do not weaken duplicate checks.
+6. **`src/lib/email.ts`:** Contains the dual-provider email dispatch chain (Gmail Apps Script → Resend). Do not remove either provider. The 8-second timeout for Apps Script is a safety boundary.
 
 ---
 
@@ -526,6 +598,12 @@ In Vercel Build Settings:
   - Check that PostgreSQL is running locally (`pg_isready`).
   - Verify your `DATABASE_URL` in `.env`.
 - **Email Skipped Warning in Logs:**
-  - If you see `[EarlyAccess Email] RESEND_API_KEY is not set`, this is expected in development when no API key is provided. The submission will still succeed and be saved in PostgreSQL.
+  - If you see `[EarlyAccess Email] No active email provider configured`, this is expected in development when neither `GMAIL_APP_SCRIPT_URL` nor `RESEND_API_KEY` is provided. The submission will still succeed and be saved in PostgreSQL.
+- **Gmail Apps Script Timeout:**
+  - If Gmail dispatch exceeds 8 seconds, it will automatically fall back to Resend. Check Google Apps Script execution logs if this happens repeatedly.
+- **Duplicate Detection:**
+  - Duplicate checking is **permanent** (checks all existing records, not time-limited).
+  - Email matching is case-insensitive and whitespace-trimmed.
+  - Phone matching strips spaces, hyphens, parentheses, dots, and handles country-code prefix variations (e.g., `+91 98765-43210` matches `9876543210`).
 - **Reference ID Collisions:**
   - Handled automatically. The generator checks the database up to 5 times for uniqueness and falls back to a randomized alphanumeric suffix if all 4-digit numbers collide.
