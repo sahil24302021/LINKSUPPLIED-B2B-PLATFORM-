@@ -24,6 +24,15 @@ export const metadata: Metadata = {
   title: "LINKSUPPLIED - Business Discovery, Intelligence & Matching",
   description:
     "Don't search through thousands of businesses. Find the ones that actually fit. LINKSUPPLIED matches your business needs with relevant partners, suppliers, and buyers - with the reasons why.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
