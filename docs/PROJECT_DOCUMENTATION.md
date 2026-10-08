@@ -607,3 +607,5 @@ In Vercel Build Settings:
   - Phone matching strips spaces, hyphens, parentheses, dots, and handles country-code prefix variations (e.g., `+91 98765-43210` matches `9876543210`).
 - **Reference ID Collisions:**
   - Handled automatically. The generator checks the database up to 5 times for uniqueness and falls back to a randomized alphanumeric suffix if all 4-digit numbers collide.
+- **Demo Dashboard Entry:**
+  - A Dashboard route-level loading boundary prevents the public Home page from remaining visible during cold or slow Demo navigation. The selected `demo=buyer` or `demo=supplier` route is preserved; both Demo destinations were verified in a fresh mobile-sized session.
