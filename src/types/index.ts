@@ -76,3 +76,8 @@ export type {
   EarlyAccessRole,
   EarlyAccessSubmission,
 } from "./waitlist";
+
+export {
+  EARLY_ACCESS_COST_COPY,
+  RESPONSE_WINDOW,
+} from "./waitlist";
