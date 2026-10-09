@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { RESPONSE_WINDOW } from "@/types/waitlist";
+import { formatEarlyAccessDisplayName, RESPONSE_WINDOW } from "@/types/waitlist";
 
 /* Deliverability still requires owner action: verify the sending domain in Resend,
  * publish SPF and DKIM, then add an aligned DMARC policy before sending from it.
@@ -28,11 +28,6 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;" })[character] || character);
 }
 
-function displayName(value: string): string {
-  const trimmed = value.trim();
-  return /^[A-Z]+$/.test(trimmed) && trimmed.length > 3 ? trimmed.toLowerCase().replace(/\b\p{L}/gu, (letter) => letter.toUpperCase()) : trimmed || "there";
-}
-
 function receivedSummary(params: SendConfirmationParams): string {
   if (params.role === "buyer") return params.buyerCommodities ? `Sourcing need: ${params.buyerCommodities}` : "Buyer early access request";
   const supplierDetails = [params.supplierProducts, params.supplierProcesses].filter(Boolean).join(", ");
@@ -40,7 +35,7 @@ function receivedSummary(params: SendConfirmationParams): string {
 }
 
 export function buildConfirmationHtml(params: SendConfirmationParams): string {
-  const renderedName = escapeHtml(displayName(params.name));
+  const renderedName = escapeHtml(formatEarlyAccessDisplayName(params.name));
   const companyName = escapeHtml(params.companyName?.trim() || "your company");
   const summary = escapeHtml(receivedSummary(params));
   const reference = escapeHtml(params.referenceId || "N/A");
@@ -61,7 +56,7 @@ export function buildConfirmationHtml(params: SendConfirmationParams): string {
 }
 
 export function buildConfirmationText(params: SendConfirmationParams): string {
-  const name = displayName(params.name);
+  const name = formatEarlyAccessDisplayName(params.name);
   return `Hi ${name},
 
 Thank you for joining LINKSUPPLIED Early Access. We received the details for ${params.companyName?.trim() || "your company"}.

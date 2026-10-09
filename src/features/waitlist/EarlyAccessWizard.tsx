@@ -5,7 +5,7 @@ import { track } from "@vercel/analytics";
 import { ArrowLeft, ArrowRight, Check, CheckCircle, WhatsappLogo } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { RESPONSE_WINDOW, type EarlyAccessRole, type EarlyAccessSubmission } from "@/types";
+import { formatEarlyAccessDisplayName, RESPONSE_WINDOW, type EarlyAccessRole, type EarlyAccessSubmission } from "@/types";
 
 const DRAFT_KEY = "linksupplied-early-access-draft-v2";
 const COUNTRY_CODES = [
@@ -59,6 +59,7 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
   const [otherText, setOtherText] = useState<Record<SelectionKey, string>>({ processes: "", method: "", problem: "" });
   const [errors, setErrors] = useState<ErrorMap>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [serverError, setServerError] = useState("");
   const [confirmedReference, setConfirmedReference] = useState("");
   const [isExisting, setIsExisting] = useState(false);
@@ -195,8 +196,24 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
       buyerBiggestProblem: selectedText(selections.problem, otherText.problem),
       company_url: form.companyUrl,
     };
+    const submitRequest = async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 20_000);
+      try {
+        return await fetch("/api/early-access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestForm), signal: controller.signal });
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    };
     try {
-      const response = await fetch("/api/early-access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestForm) });
+      let response: Response;
+      try {
+        response = await submitRequest();
+      } catch {
+        setIsRetrying(true);
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 1_500));
+        response = await submitRequest();
+      }
       const data: { success?: boolean; referenceId?: string; isExisting?: boolean; message?: string } = await response.json().catch(() => ({}));
       if (!response.ok || !data.success) {
         track("ea_submit_error", { role: form.role || "unselected", status: response.status });
@@ -212,8 +229,9 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
     } catch (error) {
       console.error("[EarlyAccess] Network submission error:", error);
       track("ea_submit_error", { role: form.role || "unselected", status: "network" });
-      setServerError("Please check your connection and try again.");
+      setServerError("We couldn't reach the server. Please check your internet and try again.");
     } finally {
+      setIsRetrying(false);
       setIsSubmitting(false);
     }
   };
@@ -243,7 +261,7 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
         <motion.div initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.3 }} className="space-y-2">
           <span className="inline-flex rounded bg-copper/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-copper">{isExisting ? "Already registered" : "Request received"}</span>
           <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-ink outline-none sm:text-3xl">You&apos;re on the early access list</h2>
-          <p className="text-sm leading-relaxed text-slate">Thank you, {form.fullName}. Your reference is <span className="font-mono font-semibold text-ink">{confirmedReference}</span>.</p>
+          <p className="text-sm leading-relaxed text-slate">Thank you, {formatEarlyAccessDisplayName(form.fullName)}. Your reference is <span className="font-mono font-semibold text-ink">{confirmedReference}</span>.</p>
         </motion.div>
         <motion.section initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.32 }} className="space-y-3 rounded-xl border border-ink/[0.08] bg-paper p-4 text-left">
           <h3 className="text-sm font-bold text-ink">What happens next</h3>
@@ -294,7 +312,7 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
       </section>}
       <div className={`mx-auto flex max-w-md flex-col-reverse gap-3 pt-1 ${step > 1 ? "sm:flex-row sm:justify-between" : ""}`}>
         {step > 1 && <Button type="button" variant="secondary" size="md" onClick={() => setStep((current) => current - 1)} disabled={isSubmitting} className="w-full sm:w-auto" iconLeading={<ArrowLeft size={16} weight="bold" />}>Back</Button>}
-        <Button type="submit" variant="primary" size="md" loading={isSubmitting} loadingText="Submitting..." className="w-full sm:ml-auto sm:w-auto" iconTrailing={step < 3 ? <ArrowRight size={16} weight="bold" /> : undefined}>{step < 3 ? "Continue" : "Submit"}</Button>
+        <Button type="submit" variant="primary" size="md" loading={isSubmitting} loadingText={isRetrying ? "Retrying..." : "Submitting..."} className="w-full sm:ml-auto sm:w-auto" iconTrailing={step < 3 ? <ArrowRight size={16} weight="bold" /> : undefined}>{step < 3 ? "Continue" : "Submit"}</Button>
       </div>
     </form>
   </div>;

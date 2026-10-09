@@ -79,5 +79,6 @@ export type {
 
 export {
   EARLY_ACCESS_COST_COPY,
+  formatEarlyAccessDisplayName,
   RESPONSE_WINDOW,
 } from "./waitlist";

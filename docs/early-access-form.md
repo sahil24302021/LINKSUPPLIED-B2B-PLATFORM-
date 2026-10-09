@@ -12,6 +12,8 @@
 
 Successful submission shows an animated confirmation, with reduced motion respected. The client persists a draft in session storage and clears it on success. Inputs have labels, inline errors, focus transfer, `aria-live`, and keyboard-operable chips.
 
+The final submit has a 20-second AbortController timeout. A network failure or timeout without an HTTP response retries once after 1.5 seconds, showing “Retrying...”; HTTP 400/413/429/500 responses are never retried. The form remains single-flight and preserves entered data if both attempts fail.
+
 | Answer | Database column |
 | --- | --- |
 | What they make | `supplierProducts` |
