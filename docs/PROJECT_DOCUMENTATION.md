@@ -4,6 +4,8 @@
 > **Target Audience:** Engineering, AI Agents, Devops & Product Contributors  
 > **Last Updated:** September 2026
 
+> **Latest audit:** The 9 October 2026 AI-discoverability update and full local audit are recorded in [`AI_DISCOVERABILITY_AND_AUDIT.md`](./AI_DISCOVERABILITY_AND_AUDIT.md).
+
 ---
 
 ## 1. Project Overview & LINKSUPPLIED Purpose
