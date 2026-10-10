@@ -1,9 +1,19 @@
 import { Resend } from "resend";
+import { formatEarlyAccessDisplayName, RESPONSE_WINDOW } from "@/types/waitlist";
+
+/* Deliverability still requires owner action: verify the sending domain in Resend,
+ * publish SPF and DKIM, then add an aligned DMARC policy before sending from it.
+ * Code cannot guarantee inbox placement, especially when using a Gmail sender. */
 
 export interface SendConfirmationParams {
   to: string;
   name: string;
   referenceId?: string;
+  role?: string;
+  companyName?: string;
+  supplierProducts?: string | null;
+  supplierProcesses?: string | null;
+  buyerCommodities?: string | null;
 }
 
 export interface SendConfirmationResult {
@@ -14,275 +24,108 @@ export interface SendConfirmationResult {
   provider?: "gmail" | "resend";
 }
 
-/**
- * Builds the responsive HTML card email matching LINKSUPPLIED branding.
- * - Light gray background (#f8fafc)
- * - White centered card with subtle border & shadow
- * - LINKSUPPLIED copper branding (#c26138)
- * - Clear application reference ID
- */
-export function buildConfirmationHtml(name: string, referenceId?: string): string {
-  const displayName = name?.trim() || "there";
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;" })[character] || character);
+}
+
+function receivedSummary(params: SendConfirmationParams): string {
+  if (params.role === "buyer") return params.buyerCommodities ? `Sourcing need: ${params.buyerCommodities}` : "Buyer early access request";
+  const supplierDetails = [params.supplierProducts, params.supplierProcesses].filter(Boolean).join(", ");
+  return supplierDetails ? `Products and processes: ${supplierDetails}` : "Early access request";
+}
+
+export function buildConfirmationHtml(params: SendConfirmationParams): string {
+  const renderedName = escapeHtml(formatEarlyAccessDisplayName(params.name));
+  const companyName = escapeHtml(params.companyName?.trim() || "your company");
+  const summary = escapeHtml(receivedSummary(params));
+  const reference = escapeHtml(params.referenceId || "N/A");
   return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're on the LINKSUPPLIED Early Access list</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; padding: 24px;">
-  <div style="max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-    <div style="margin-bottom: 24px;">
-      <span style="font-family: monospace; font-size: 11px; font-weight: bold; letter-spacing: 0.1em; color: #c26138; text-transform: uppercase;">LINKSUPPLIED</span>
-    </div>
-
-    <p style="font-size: 15px; margin-top: 0; margin-bottom: 16px;">Hi ${displayName},</p>
-    <p style="font-size: 15px; margin-bottom: 16px;">Thanks for joining LINKSUPPLIED Early Access.</p>
-    <p style="font-size: 15px; margin-bottom: 16px;">We've received your details and will keep you updated as we open access to the platform.</p>
-    <p style="font-size: 15px; margin-bottom: 24px;">We'll be in touch soon.</p>
-
-    ${
-      referenceId
-        ? `<div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-family: monospace; font-size: 11px; color: #94a3b8;">Application Ref: <span style="font-weight: 600; color: #1e293b;">${referenceId}</span></div>`
-        : ""
-    }
-
-    <p style="font-size: 14px; color: #475569; margin-top: 20px; margin-bottom: 0;">— Team LINKSUPPLIED</p>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LINKSUPPLIED Early Access</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;margin:0;padding:24px;">
+  <div style="max-width:540px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
+    <p style="font-family:monospace;font-size:11px;font-weight:700;letter-spacing:.1em;color:#c26138;margin:0 0 20px;">LINKSUPPLIED</p>
+    <p style="font-size:15px;margin:0 0 16px;">Hi ${renderedName},</p>
+    <p style="font-size:15px;margin:0 0 16px;">Thank you for joining LINKSUPPLIED Early Access. We received the details for ${companyName}.</p>
+    <p style="font-size:15px;margin:0 0 8px;">We received:</p>
+    <p style="font-size:15px;margin:0 0 16px;color:#475569;">${summary}</p>
+    <p style="font-size:15px;margin:0 0 20px;">We will contact you on WhatsApp within ${RESPONSE_WINDOW}.</p>
+    <p style="border-top:1px solid #e2e8f0;padding-top:16px;margin:0;font-family:monospace;font-size:12px;color:#475569;">Reference: <strong style="color:#1e293b;">${reference}</strong></p>
+    <p style="font-size:14px;color:#475569;margin:20px 0 0;">Team LINKSUPPLIED</p>
   </div>
-</body>
-</html>`;
+</body></html>`;
 }
 
-/**
- * Builds the plain-text fallback content.
- */
-export function buildConfirmationText(name: string, referenceId?: string): string {
-  const displayName = name?.trim() || "there";
-  return `Hi ${displayName},
+export function buildConfirmationText(params: SendConfirmationParams): string {
+  const name = formatEarlyAccessDisplayName(params.name);
+  return `Hi ${name},
 
-Thanks for joining LINKSUPPLIED Early Access.
+Thank you for joining LINKSUPPLIED Early Access. We received the details for ${params.companyName?.trim() || "your company"}.
 
-We've received your details and will keep you updated as we open access to the platform.
+We received: ${receivedSummary(params)}
 
-We'll be in touch soon.
+We will contact you on WhatsApp within ${RESPONSE_WINDOW}.
 
-Application Reference:
-${referenceId || "N/A"}
+Reference: ${params.referenceId || "N/A"}
 
-— Team LINKSUPPLIED
-`;
+Team LINKSUPPLIED`;
 }
 
-/**
- * Sends confirmation email via Google Apps Script Web App (from linksupplied@gmail.com).
- * Uses an 8-second safety timeout and safely handles HTTP and JSON errors.
- */
-async function sendViaGoogleAppsScript({
-  to,
-  name,
-  referenceId,
-  scriptUrl,
-}: SendConfirmationParams & { scriptUrl: string }): Promise<SendConfirmationResult> {
-  const subject = "You're on the LINKSUPPLIED Early Access list";
-  const htmlBody = buildConfirmationHtml(name, referenceId);
-  const textBody = buildConfirmationText(name, referenceId);
-
-  const payload = {
-    to,
-    subject,
-    htmlBody,
-    textBody,
-    name,
-    referenceId: referenceId || "",
-  };
-
+async function sendViaGoogleAppsScript(params: SendConfirmationParams & { scriptUrl: string }): Promise<SendConfirmationResult> {
+  const subject = `We received your LINKSUPPLIED request (${params.referenceId || "reference pending"})`;
+  const payload = { to: params.to, subject, htmlBody: buildConfirmationHtml(params), textBody: buildConfirmationText(params), name: params.name, referenceId: params.referenceId || "" };
   try {
-    const res = await fetch(scriptUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      redirect: "follow",
-      signal: AbortSignal.timeout(8000), // 8-second safety timeout
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "Unknown HTTP error");
-      console.error(
-        `[EarlyAccess Email] Google Apps Script HTTP ${res.status}:`,
-        errText.slice(0, 200)
-      );
-      return {
-        success: false,
-        error: `Google Apps Script HTTP ${res.status}: ${errText.slice(0, 100)}`,
-        provider: "gmail",
-      };
+    const response = await fetch(params.scriptUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), redirect: "follow", signal: AbortSignal.timeout(8000) });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown HTTP error");
+      console.error(`[EarlyAccess Email] Google Apps Script HTTP ${response.status}:`, errorText.slice(0, 200));
+      return { success: false, error: `Google Apps Script HTTP ${response.status}: ${errorText.slice(0, 100)}`, provider: "gmail" };
     }
-
     let data: Record<string, unknown> = {};
-    try {
-      data = await res.json();
-    } catch {
-      // If Apps Script returns non-JSON or plain text
-    }
-
+    try { data = await response.json(); } catch { /* Apps Script can return plain text. */ }
     if (data.status === "error" || data.success === false) {
-      const errMsg =
-        typeof data.message === "string"
-          ? data.message
-          : "Google Apps Script reported an error";
-      console.error(`[EarlyAccess Email] Google Apps Script error:`, errMsg);
-      return {
-        success: false,
-        error: errMsg,
-        provider: "gmail",
-      };
+      const error = typeof data.message === "string" ? data.message : "Google Apps Script reported an error";
+      console.error("[EarlyAccess Email] Google Apps Script error:", error);
+      return { success: false, error, provider: "gmail" };
     }
-
-    console.log(
-      `[EarlyAccess Email] Confirmation successfully sent via Gmail (Google Apps Script) to ${to}`
-    );
-    return {
-      success: true,
-      messageId: typeof data.id === "string" ? data.id : "apps-script-dispatched",
-      provider: "gmail",
-    };
-  } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Apps Script delivery exception";
-    console.error(
-      `[EarlyAccess Email] Google Apps Script delivery exception:`,
-      message
-    );
-    return {
-      success: false,
-      error: message,
-      provider: "gmail",
-    };
+    console.log(`[EarlyAccess Email] Confirmation successfully sent via Gmail (Google Apps Script) to ${params.to}`);
+    return { success: true, messageId: typeof data.id === "string" ? data.id : "apps-script-dispatched", provider: "gmail" };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Apps Script delivery exception";
+    console.error("[EarlyAccess Email] Google Apps Script delivery exception:", message);
+    return { success: false, error: message, provider: "gmail" };
   }
 }
 
-/**
- * Sends confirmation email via Resend (fallback or standalone provider).
- */
-async function sendViaResend({
-  to,
-  name,
-  referenceId,
-  apiKey,
-}: SendConfirmationParams & { apiKey: string }): Promise<SendConfirmationResult> {
-  const from =
-    process.env.EARLY_ACCESS_FROM_EMAIL?.trim() ||
-    "LINKSUPPLIED <hello@linksupplied.com>";
-
-  const subject = "You're on the LINKSUPPLIED Early Access list";
-  const html = buildConfirmationHtml(name, referenceId);
-  const plainText = buildConfirmationText(name, referenceId);
-
+async function sendViaResend(params: SendConfirmationParams & { apiKey: string }): Promise<SendConfirmationResult> {
+  const from = process.env.EARLY_ACCESS_FROM_EMAIL?.trim() || "LINKSUPPLIED <hello@linksupplied.com>";
   try {
-    const resend = new Resend(apiKey);
-    const { data, error } = await resend.emails.send({
-      from,
-      to: [to],
-      subject,
-      text: plainText,
-      html,
-    });
-
+    const resend = new Resend(params.apiKey);
+    const subject = `We received your LINKSUPPLIED request (${params.referenceId || "reference pending"})`;
+    const replyTo = process.env.EARLY_ACCESS_REPLY_TO?.trim() || process.env.EARLY_ACCESS_FROM_EMAIL?.trim();
+    const { data, error } = await resend.emails.send({ from, to: [params.to], subject, text: buildConfirmationText(params), html: buildConfirmationHtml(params), replyTo });
     if (error) {
-      console.error(
-        `[EarlyAccess Email] Resend delivery error for ${to}:`,
-        error.message
-      );
-      return {
-        success: false,
-        error: error.message,
-        provider: "resend",
-      };
+      console.error(`[EarlyAccess Email] Resend delivery error for ${params.to}:`, error.message);
+      return { success: false, error: error.message, provider: "resend" };
     }
-
-    console.log(
-      `[EarlyAccess Email] Confirmation successfully sent via Resend to ${to} (ID: ${data?.id})`
-    );
-    return {
-      success: true,
-      messageId: data?.id,
-      provider: "resend",
-    };
-  } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Unknown email dispatch error";
-    console.error(
-      `[EarlyAccess Email] Unexpected error sending to ${to} via Resend:`,
-      message
-    );
-    return {
-      success: false,
-      error: message,
-      provider: "resend",
-    };
+    console.log(`[EarlyAccess Email] Confirmation successfully sent via Resend to ${params.to} (ID: ${data?.id})`);
+    return { success: true, messageId: data?.id, provider: "resend" };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown email dispatch error";
+    console.error(`[EarlyAccess Email] Unexpected error sending to ${params.to} via Resend:`, message);
+    return { success: false, error: message, provider: "resend" };
   }
 }
 
-/**
- * Master dispatcher for Early Access confirmation emails:
- * 1. If GMAIL_APP_SCRIPT_URL is configured:
- *    - Sends via Google Apps Script Web App (from linksupplied@gmail.com).
- *    - If Google Apps Script fails, falls back to Resend automatically.
- * 2. If GMAIL_APP_SCRIPT_URL is not configured:
- *    - Dispatches directly via Resend.
- * 3. If neither provider is configured:
- *    - Logs safely and returns skipped=true without failing registration.
- */
-export async function sendEarlyAccessConfirmation({
-  to,
-  name,
-  referenceId,
-}: SendConfirmationParams): Promise<SendConfirmationResult> {
+export async function sendEarlyAccessConfirmation(params: SendConfirmationParams): Promise<SendConfirmationResult> {
   const appsScriptUrl = process.env.GMAIL_APP_SCRIPT_URL?.trim();
-
-  // 1. Primary: Google Apps Script Web App (Gmail)
   if (appsScriptUrl) {
-    console.log(
-      `[EarlyAccess Email] Attempting confirmation dispatch via Gmail (Google Apps Script) to ${to}...`
-    );
-    const gmailResult = await sendViaGoogleAppsScript({
-      to,
-      name,
-      referenceId,
-      scriptUrl: appsScriptUrl,
-    });
-
-    if (gmailResult.success) {
-      return gmailResult;
-    }
-
-    console.warn(
-      `[EarlyAccess Email] Gmail Apps Script failed (${gmailResult.error}). Falling back to Resend...`
-    );
+    console.log(`[EarlyAccess Email] Attempting confirmation dispatch via Gmail (Google Apps Script) to ${params.to}...`);
+    const gmailResult = await sendViaGoogleAppsScript({ ...params, scriptUrl: appsScriptUrl });
+    if (gmailResult.success) return gmailResult;
+    console.warn(`[EarlyAccess Email] Gmail Apps Script failed (${gmailResult.error}). Falling back to Resend...`);
   }
-
-  // 2. Fallback / Default: Resend
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
-  if (resendApiKey) {
-    return sendViaResend({
-      to,
-      name,
-      referenceId,
-      apiKey: resendApiKey,
-    });
-  }
-
-  // 3. Neither provider configured
-  console.warn(
-    `[EarlyAccess Email] No active email provider configured (GMAIL_APP_SCRIPT_URL or RESEND_API_KEY). Acknowledging lead ${to} (ref: ${referenceId || "N/A"}) without live email dispatch.`
-  );
-  return {
-    success: false,
-    skipped: true,
-    error: appsScriptUrl
-      ? "Google Apps Script failed and RESEND_API_KEY is not configured for fallback."
-      : "Neither GMAIL_APP_SCRIPT_URL nor RESEND_API_KEY is configured.",
-  };
+  if (resendApiKey) return sendViaResend({ ...params, apiKey: resendApiKey });
+  console.warn(`[EarlyAccess Email] No active email provider configured (GMAIL_APP_SCRIPT_URL or RESEND_API_KEY). Acknowledging lead ${params.to} (ref: ${params.referenceId || "N/A"}) without live email dispatch.`);
+  return { success: false, skipped: true, error: appsScriptUrl ? "Google Apps Script failed and RESEND_API_KEY is not configured for fallback." : "Neither GMAIL_APP_SCRIPT_URL nor RESEND_API_KEY is configured." };
 }
