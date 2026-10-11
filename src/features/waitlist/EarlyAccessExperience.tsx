@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Clock, CurrencyInr, UsersThree } from "@phosphor-icons/react";
-import { EARLY_ACCESS_COST_COPY, RESPONSE_WINDOW } from "@/types/waitlist";
+import { EARLY_ACCESS_COST_COPY } from "@/types/waitlist";
 import { EarlyAccessWizard } from "./EarlyAccessWizard";
 
 const INFO_CARDS = [
   { label: "Who it is for", title: "Manufacturers, suppliers and buyers", text: "Factories and suppliers who want more enquiries, and buyers who want reliable suppliers.", icon: UsersThree },
   { label: "What it costs", title: "Free to join", text: EARLY_ACCESS_COST_COPY, icon: CurrencyInr },
-  { label: "What happens next", title: "We contact you on WhatsApp", text: `We review your details and reach out within ${RESPONSE_WINDOW}.`, icon: Clock },
+  { label: "What happens next", title: "We’ll be in touch soon", text: "We review your details and will be in touch soon.", icon: Clock },
 ];
 
 export function EarlyAccessExperience() {

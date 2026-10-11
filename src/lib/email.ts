@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { formatEarlyAccessDisplayName, RESPONSE_WINDOW } from "@/types/waitlist";
+import { formatEarlyAccessDisplayName } from "@/types/waitlist";
 
 /* Deliverability still requires owner action: verify the sending domain in Resend,
  * publish SPF and DKIM, then add an aligned DMARC policy before sending from it.
@@ -48,7 +48,7 @@ export function buildConfirmationHtml(params: SendConfirmationParams): string {
     <p style="font-size:15px;margin:0 0 16px;">Thank you for joining LINKSUPPLIED Early Access. We received the details for ${companyName}.</p>
     <p style="font-size:15px;margin:0 0 8px;">We received:</p>
     <p style="font-size:15px;margin:0 0 16px;color:#475569;">${summary}</p>
-    <p style="font-size:15px;margin:0 0 20px;">We will contact you on WhatsApp within ${RESPONSE_WINDOW}.</p>
+    <p style="font-size:15px;margin:0 0 20px;">We&apos;ll be in touch soon.</p>
     <p style="border-top:1px solid #e2e8f0;padding-top:16px;margin:0;font-family:monospace;font-size:12px;color:#475569;">Reference: <strong style="color:#1e293b;">${reference}</strong></p>
     <p style="font-size:14px;color:#475569;margin:20px 0 0;">Team LINKSUPPLIED</p>
   </div>
@@ -63,7 +63,7 @@ Thank you for joining LINKSUPPLIED Early Access. We received the details for ${p
 
 We received: ${receivedSummary(params)}
 
-We will contact you on WhatsApp within ${RESPONSE_WINDOW}.
+We'll be in touch soon.
 
 Reference: ${params.referenceId || "N/A"}
 

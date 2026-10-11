@@ -1,6 +1,5 @@
 // LINKSUPPLIED - Early Access & Waitlist Types
 
-export const RESPONSE_WINDOW = "2 working days";
 export const EARLY_ACCESS_COST_COPY = "Creating your early access profile is free.";
 
 export function formatEarlyAccessDisplayName(value: string): string {

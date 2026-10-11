@@ -45,4 +45,6 @@ Run `npx tsc --noEmit`, `npm run lint`, and `npx next build --webpack`. Do not u
 
 ## Change log
 
+2026-10-11: Updated public, submission-confirmation, and confirmation-email messaging to remove WhatsApp-specific and fixed response-time promises; each now says the team will be in touch soon.
+
 2026-10-10: Replaced the five-step enterprise intake with the three-step Early Access flow, role-specific questions, WhatsApp contact, confirmation animation, honeypot, and database-backed rate limit.

@@ -5,7 +5,7 @@ import { track } from "@vercel/analytics";
 import { ArrowLeft, ArrowRight, Check, CheckCircle, WhatsappLogo } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { formatEarlyAccessDisplayName, RESPONSE_WINDOW, type EarlyAccessRole, type EarlyAccessSubmission } from "@/types";
+import { formatEarlyAccessDisplayName, type EarlyAccessRole, type EarlyAccessSubmission } from "@/types";
 
 const DRAFT_KEY = "linksupplied-early-access-draft-v2";
 const COUNTRY_CODES = [
@@ -267,7 +267,7 @@ export function EarlyAccessWizard({ onSubmitted }: { onSubmitted?: () => void })
           <h3 className="text-sm font-bold text-ink">What happens next</h3>
           <ol className="space-y-3 text-sm leading-relaxed text-slate">
             <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-copper/10 text-xs font-bold text-copper">1</span><span>We review your details.</span></li>
-            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-copper/10 text-xs font-bold text-copper">2</span><span>We contact you on WhatsApp at <span className="font-medium text-ink">{form.phone}</span> within {RESPONSE_WINDOW}.</span></li>
+            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-copper/10 text-xs font-bold text-copper">2</span><span>We&apos;ll be in touch soon.</span></li>
             <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-copper/10 text-xs font-bold text-copper">3</span><span>{form.role === "buyer" ? "We will help you find suppliers for what you need." : "As we start matching suppliers with buyer requirements, we will reach out to you."}</span></li>
           </ol>
           <p className="break-all text-sm text-slate">A confirmation was sent to {form.workEmail}.</p><p className="text-sm text-slate">Can&apos;t find the email? Check your Spam folder.</p>
